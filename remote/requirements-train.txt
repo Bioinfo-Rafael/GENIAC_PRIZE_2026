@@ -1,0 +1,7 @@
+# Bootstrap requirements, not a tested lock. Record actual versions in logs/packages.txt.
+unsloth
+trl
+bitsandbytes
+datasets
+peft
+accelerate

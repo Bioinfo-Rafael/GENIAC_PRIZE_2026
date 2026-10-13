@@ -1,0 +1,67 @@
+{
+  "config_version": "1",
+  "description": "GENIAC Prize 2026 テーマ 2 コンペスクリーニング 推論用 config。配布時の chat template と prompt の既定値、および chat template が満たすべき条件 (chat_template_policy) を収めている。",
+  "base_model": "Qwen/Qwen3-4B-Base",
+  "chat_template": {
+    "source_model": "Qwen/Qwen3-4B-Instruct-2507",
+    "source_file": "tokenizer_config.json:chat_template",
+    "license": "apache-2.0",
+    "sha256": "64f85b198065d0fba2a81f37e10ed68161ce2c19a754c7100e67e0ca2ee9c326",
+    "jinja": "{%- if tools %}\n    {{- '<|im_start|>system\\n' }}\n    {%- if messages[0].role == 'system' %}\n        {{- messages[0].content + '\\n\\n' }}\n    {%- endif %}\n    {{- \"# Tools\\n\\nYou may call one or more functions to assist with the user query.\\n\\nYou are provided with function signatures within <tools></tools> XML tags:\\n<tools>\" }}\n    {%- for tool in tools %}\n        {{- \"\\n\" }}\n        {{- tool | tojson }}\n    {%- endfor %}\n    {{- \"\\n</tools>\\n\\nFor each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:\\n<tool_call>\\n{\\\"name\\\": <function-name>, \\\"arguments\\\": <args-json-object>}\\n</tool_call><|im_end|>\\n\" }}\n{%- else %}\n    {%- if messages[0].role == 'system' %}\n        {{- '<|im_start|>system\\n' + messages[0].content + '<|im_end|>\\n' }}\n    {%- endif %}\n{%- endif %}\n{%- for message in messages %}\n    {%- if message.content is string %}\n        {%- set content = message.content %}\n    {%- else %}\n        {%- set content = '' %}\n    {%- endif %}\n    {%- if (message.role == \"user\") or (message.role == \"system\" and not loop.first) %}\n        {{- '<|im_start|>' + message.role + '\\n' + content + '<|im_end|>' + '\\n' }}\n    {%- elif message.role == \"assistant\" %}\n        {{- '<|im_start|>' + message.role + '\\n' + content }}\n        {%- if message.tool_calls %}\n            {%- for tool_call in message.tool_calls %}\n                {%- if (loop.first and content) or (not loop.first) %}\n                    {{- '\\n' }}\n                {%- endif %}\n                {%- if tool_call.function %}\n                    {%- set tool_call = tool_call.function %}\n                {%- endif %}\n                {{- '<tool_call>\\n{\"name\": \"' }}\n                {{- tool_call.name }}\n                {{- '\", \"arguments\": ' }}\n                {%- if tool_call.arguments is string %}\n                    {{- tool_call.arguments }}\n                {%- else %}\n                    {{- tool_call.arguments | tojson }}\n                {%- endif %}\n                {{- '}\\n</tool_call>' }}\n            {%- endfor %}\n        {%- endif %}\n        {{- '<|im_end|>\\n' }}\n    {%- elif message.role == \"tool\" %}\n        {%- if loop.first or (messages[loop.index0 - 1].role != \"tool\") %}\n            {{- '<|im_start|>user' }}\n        {%- endif %}\n        {{- '\\n<tool_response>\\n' }}\n        {{- content }}\n        {{- '\\n</tool_response>' }}\n        {%- if loop.last or (messages[loop.index0 + 1].role != \"tool\") %}\n            {{- '<|im_end|>\\n' }}\n        {%- endif %}\n    {%- endif %}\n{%- endfor %}\n{%- if add_generation_prompt %}\n    {{- '<|im_start|>assistant\\n' }}\n{%- endif %}"
+  },
+  "chat_template_policy": {
+    "framing_may_change": true,
+    "max_framing_chars": 128,
+    "allowed_framing_words": [
+      "a",
+      "ai",
+      "answer",
+      "assistant",
+      "bos",
+      "bot",
+      "e",
+      "end",
+      "eos",
+      "eot",
+      "header",
+      "human",
+      "im",
+      "input",
+      "inst",
+      "instruction",
+      "of",
+      "output",
+      "problem",
+      "prompt",
+      "q",
+      "question",
+      "response",
+      "s",
+      "solution",
+      "start",
+      "sys",
+      "system",
+      "text",
+      "tool",
+      "turn",
+      "user"
+    ],
+    "reference_framing": {
+      "prefix": "<|im_start|>user\n",
+      "suffix": "<|im_end|>\n<|im_start|>assistant\n"
+    },
+    "note": "枠組みは全問で同一であること、特殊トークンと役割名と空白のみで構成されること、合計文字数が max_framing_chars 以下であることが条件。提出用 JSON に記録され、形式チェックと事後の監査で確認する。"
+  },
+  "prompt": {
+    "system_prompt": null,
+    "turns": [
+      {
+        "role": "user",
+        "content": "{QUESTION}"
+      }
+    ],
+    "placeholder": "{QUESTION}",
+    "rendered_example": "<|im_start|>user\n{QUESTION}<|im_end|>\n<|im_start|>assistant\n",
+    "note": "問題文の差し込み方 (単一の user turn) は変更できない。学習をせずに参加する場合 (ルート iii) は Base モデルが chat template を持たないため template を適用せず、問題文をそのまま入力する。"
+  }
+}

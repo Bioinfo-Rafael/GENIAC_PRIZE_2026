@@ -1,0 +1,34 @@
+.venv-local/
+data_cache/
+local_eval/
+local_eval_run.log
+__pycache__/
+
+colab_t4/experiments/run02_colab_inputs.zip
+
+# Runtime artifacts and credentials are transferred separately, never via Git.
+.venv*/
+.env
+.env.*
+!.env.example
+*.log
+*.zip
+*.tar.gz
+*.safetensors
+*.pt
+*.pth
+*.bin
+*.pem
+*.key
+.DS_Store
+adapters/
+checkpoints/
+merged/
+geniac_workspace/
+
+# Organizer documents and executed notebooks stay local.
+*.docx
+*.pdf
+*.pptx
+/*.ipynb
+/colab_t4/*.ipynb
