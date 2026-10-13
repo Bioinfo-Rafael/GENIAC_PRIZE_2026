@@ -4,7 +4,7 @@
 
 Colab接続の代替として `remote/run02.py` を追加した。Linux/CUDA上で、入力ZIPの検証・配置 → Base＋既存Stage 1の統合 → 新規Stage 2の学習 → adapter保存を別プロセスで順に実行する。Driveの認証・notebookのカーネル選択・手動再起動は不要。PRM 1,500＋GSM 500、1 epoch、FP16/4bit LoRAなどの条件はColab版run02と同じ。Stage 1は学習し直さずrun01を再利用する。
 
-現時点ではGitHubへのpush、接続先GPUの確認、GPU学習は未実施。A6000での動作・所要時間・改善スコアは未検証。`remote/requirements-train.txt` は導入用リストであり、検証済みの固定環境ではない。実際に導入された版は `logs/packages.txt` に保存する。既存checkpointから再開する場合、ライブラリ更新を避けて同じvenvを使う。
+2026年10月14日、[Bioinfo-Rafael/GENIAC_PRIZE_2026](https://github.com/Bioinfo-Rafael/GENIAC_PRIZE_2026) を非公開で作成し、初回commit `3a2b9ce` をpushした。VS CodeのRemote Tunnel `rafael` への接続は確認したが、PC操作ツールのタイムアウトにより接続先GPUの確認、clone、GPU学習はまだ未実施。A6000での動作・所要時間・改善スコアは未検証。`remote/requirements-train.txt` は導入用リストであり、検証済みの固定環境ではない。実際に導入された版は `logs/packages.txt` に保存する。既存checkpointから再開する場合、ライブラリ更新を避けて同じvenvを使う。
 
 コードをcloneしたLinuxマシンでPython 3.11または3.12のvenvを作り、別途転送した `run02_colab_inputs.zip` を指定する。GitHubにはこのZIP、adapter、教材、実行済みnotebook出力、認証情報を含めない。初回は `git clone <確定したリポジトリURL>`、以後のコード更新時は `git pull --ff-only` を使う。
 
@@ -22,6 +22,8 @@ SSHが切れても継続したい場合は、上記をサーバー上の `tmux` 
 再開は同じvenv・workspaceで、`--install` を外して同じコマンドを使う。50 stepごとのcheckpointから再開し、完了済みなら重みのハッシュを確認してスキップする。同一workspaceへの二重起動はロックで防ぐ。`RUN02_TRAINING_COMPLETE` が完了の目印。出力は `~/geniac_workspace/adapters/cuda_20261013_run02_prmfull_stage2/`、集計は `~/geniac_workspace/experiments/cuda_20261013_run02_prmfull/training_summary.json`。
 
 このコマンドは学習と保存まで。開発用評価・公式推論・提出は含まない。公式推論には指定コードとT4での時間条件が引き続きある。現在の概要・ルールは「Colabとローカル」を認めているが、今回のリモートサーバーがその範囲に含まれるかは未確認。
+
+公式推論用に [run02_inference_t4.ipynb](colab_t4/experiments/run02_inference_t4.ipynb) を準備済み。配布原本のconfigセルにあるRUN_ID・Stage 1/2の保存先名・recipe説明だけを変更した。ほかのコードは原本と同一で、実行出力は空。実行前に、完成したrun02 Stage 2と既存Stage 1を指定のDrive保存先へ転送する必要がある。こちらもまだ未実行・未提出。
 
 `remote/run02_worker.py` は通常のPythonコード。元の `train_stage2.ipynb` を更新した場合は `python3 remote/build_worker.py` で再生成する。元の実行済みnotebookは変更しない。
 
