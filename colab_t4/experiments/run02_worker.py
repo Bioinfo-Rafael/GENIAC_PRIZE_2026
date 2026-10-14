@@ -1125,15 +1125,30 @@ if PHASE == 'train':
     for i in (0, len(tokenized)-1):
         example = trainer.train_dataset[i]
         batch = trainer.data_collator([example])
-        mask = batch['attention_mask'].bool()
-        if not torch.equal(batch['input_ids'][mask], batch['labels'][mask]):
-            raise RuntimeError('想定外のlossマスクを検出しました。')
-        if not torch.all(batch['labels'][~mask] == -100):
-            raise RuntimeError('paddingのlossマスクが不正です。')
-        n = int(mask.sum())
-        if (batch['input_ids'][mask].tolist() != tokenized[i]['input_ids']
-                or batch['input_ids'][0,n-1].item() != tokenizer.eos_token_id):
+        # A one-example padding-free batch can omit attention_mask.
+        ids, labels = batch['input_ids'], batch['labels']
+        if ids.ndim != 2 or ids.shape[0] != 1 or labels.shape != ids.shape:
+            raise RuntimeError('検査用の単一example batchの形状が不正です。')
+        if 'attention_mask' in batch:
+            mask = batch['attention_mask'].bool()
+        else:
+            # Do not infer padding from token IDs: pad and EOS can share an ID.
+            if ids.numel() != len(tokenized[i]['input_ids']):
+                raise RuntimeError('attention_maskなしで系列長が変わっています。')
+            mask = torch.ones_like(ids, dtype=torch.bool)
+        actual_ids, actual_labels = ids[mask], labels[mask]
+        if (actual_ids.tolist() != tokenized[i]['input_ids']
+                or actual_ids[-1].item() != tokenizer.eos_token_id):
             raise RuntimeError('データの切詰め/EOS欠落を検出しました。')
+        expected_labels = actual_ids.clone()
+        # The first label has no preceding token and is never a causal target.
+        # Padding-free collators may explicitly ignore that boundary label.
+        if actual_labels[0].item() == -100:
+            expected_labels[0] = -100
+        if not torch.equal(expected_labels, actual_labels):
+            raise RuntimeError('想定外のlossマスクを検出しました。')
+        if not torch.all(labels[~mask] == -100):
+            raise RuntimeError('paddingのlossマスクが不正です。')
     print('実際のlabelsを確認：非padding全体を学習、全文/EOSを保持。')
 
 # [train-and-save]
