@@ -23,7 +23,7 @@ SSHが切れても継続したい場合は、上記をサーバー上の `tmux` 
 
 このコマンドは学習と保存まで。開発用評価・公式推論・提出は含まない。公式推論には指定コードとT4での時間条件が引き続きある。現在の概要・ルールは「Colabとローカル」を認めているが、今回のリモートサーバーがその範囲に含まれるかは未確認。
 
-公式推論用に [run02_inference_t4.ipynb](colab_t4/experiments/run02_inference_t4.ipynb) を準備済み。配布原本のconfigセルにあるRUN_ID・Stage 1/2の保存先名・recipe説明だけを変更した。ほかのコードは原本と同一で、実行出力は空。実行前に、完成したrun02 Stage 2と既存Stage 1を指定のDrive保存先へ転送する必要がある。公式推論・提出はまだ未実行。2026年10月14日、ユーザーからColab版run02で `RUN02_TRAINING_COMPLETE` が表示されたとの報告を受領。attention_mask検査を修正した再開用notebookで学習を完了した流れ。推論notebookのRUN_IDとStage 2保存先を `t4_20261013_run02_prmfull` に修正した。学習集計の内容・改善スコアはまだ未確認。
+公式推論用に [run02_inference_t4.ipynb](colab_t4/experiments/run02_inference_t4.ipynb) を準備済み。配布原本のconfigセルにあるRUN_ID・Stage 1/2の保存先名・recipe説明だけを変更した。その後、ユーザー指定によりVS Code対応として `[hf-login]` のトークン取得を `userdata.get` から `getpass` の非表示入力へ変更した。この認証セルは配布原本との差分となる。モデル推論・問題取得・提出形式の処理は変更していない。実行出力は空。実行前に、完成したrun02 Stage 2と既存Stage 1を指定のDrive保存先へ転送する必要がある。公式推論・提出はまだ未実行。2026年10月14日、ユーザーからColab版run02で `RUN02_TRAINING_COMPLETE` が表示されたとの報告を受領。attention_mask検査を修正した再開用notebookで学習を完了した流れ。推論notebookのRUN_IDとStage 2保存先を `t4_20261013_run02_prmfull` に修正した。学習集計の内容・改善スコアはまだ未確認。
 
 `remote/run02_worker.py` は通常のPythonコード。元の `train_stage2.ipynb` を更新した場合は `python3 remote/build_worker.py` で再生成する。元の実行済みnotebookは変更しない。
 
@@ -332,3 +332,14 @@ ZIP の CRC と展開ファイルのバイト一致は全件成功。展開原�
 学習用コピーでは install 失敗時の停止、Unsloth の先行 import、`SFTTrainer(processing_class=...)`、`use_exact_model_name=True` を追加した。取得元は `Qwen/Qwen3-4B-Base` のまま、4bit化は Colab で行う。依存パッケージは配布と同じ未固定インストールなので、環境変化によるエラーは実機で確認する必要がある。
 
 参照した API: [TRL SFTTrainer](https://huggingface.co/docs/trl/en/sft_trainer)、[Unsloth model loader](https://github.com/unslothai/unsloth/blob/main/unsloth/models/loader.py)。大会条件はこのフォルダの配布文書を参照し、9/28の説明スライドより後の「概要・ルール」を優先した。
+
+
+## run02の結果確認とrun03候補（2026年10月14日）
+
+ユーザー報告のrun02公式スコアは **0.174014**（run01 0.14095から+0.033064）。共有Driveの `experiments/t4_20261013_run02_prmfull/training_summary.json` と `logs/train.log` を取得して確認した。`complete=true`、1 epoch、125 optimizer steps、学習時間1407.1929秒（約23.5分）、平均train loss 0.651883。表示されたlossは序盤0.9451、最終区間0.6551。学習lossだけでは汎化性能・過学習の有無は判定できない。以前のattention_mask検査エラーの履歴はログに残るが、最終集計は完了を示す。公式問題・提出JSON本文は閲覧していない。
+
+次の候補は [run03_auto_t4.ipynb](colab_t4/experiments/run03_auto_t4.ipynb)。PRM4,500＋GSM1,500の合計6,000件、1 epoch。Stage 1はrun01を再利用し、Stage 2は新規LoRA。run02のStage 2は継ぎ足さない。学習率・LoRA・batch・最大長・全非padding loss・教材比率を維持する。固定評価800問は引き続き除外。
+
+新しいColab T4で「すべて実行」を1回押し、run02と同じGoogleアカウントでDriveを認証する。ZIPは不要。完了は `RUN03_TRAINING_COMPLETE`、保存先は `geniac_workspace/adapters/t4_20261014_run03_prmfull6k_stage2/`。run03のGPU学習は未実行。
+
+ローカルの機械的事前処理は完了：6,000件、1,598,551トークン、平均266.425、最大1,923、全件EOSあり。run02の528,362トークンの約3.03倍。学習時間の粗い見積もりは約71分＋環境構築・取得・mergeであり、実測ではない。学習後はrun02と同じ固定devで比較し、次の公式提出を判断する。0.22超えの保証はない。
