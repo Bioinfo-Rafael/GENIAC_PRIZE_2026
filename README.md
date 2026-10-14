@@ -23,7 +23,7 @@ SSHが切れても継続したい場合は、上記をサーバー上の `tmux` 
 
 このコマンドは学習と保存まで。開発用評価・公式推論・提出は含まない。公式推論には指定コードとT4での時間条件が引き続きある。現在の概要・ルールは「Colabとローカル」を認めているが、今回のリモートサーバーがその範囲に含まれるかは未確認。
 
-公式推論用に [run02_inference_t4.ipynb](colab_t4/experiments/run02_inference_t4.ipynb) を準備済み。配布原本のconfigセルにあるRUN_ID・Stage 1/2の保存先名・recipe説明だけを変更した。ほかのコードは原本と同一で、実行出力は空。実行前に、完成したrun02 Stage 2と既存Stage 1を指定のDrive保存先へ転送する必要がある。こちらもまだ未実行・未提出。
+公式推論用に [run02_inference_t4.ipynb](colab_t4/experiments/run02_inference_t4.ipynb) を準備済み。配布原本のconfigセルにあるRUN_ID・Stage 1/2の保存先名・recipe説明だけを変更した。ほかのコードは原本と同一で、実行出力は空。実行前に、完成したrun02 Stage 2と既存Stage 1を指定のDrive保存先へ転送する必要がある。公式推論・提出はまだ未実行。2026年10月14日、ユーザーからColab版run02で `RUN02_TRAINING_COMPLETE` が表示されたとの報告を受領。attention_mask検査を修正した再開用notebookで学習を完了した流れ。推論notebookのRUN_IDとStage 2保存先を `t4_20261013_run02_prmfull` に修正した。学習集計の内容・改善スコアはまだ未確認。
 
 `remote/run02_worker.py` は通常のPythonコード。元の `train_stage2.ipynb` を更新した場合は `python3 remote/build_worker.py` で再生成する。元の実行済みnotebookは変更しない。
 
