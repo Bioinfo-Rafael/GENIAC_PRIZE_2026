@@ -615,4 +615,3 @@ if PHASE == 'evaluate':
     atomic_json(output_dir/'summary.json', summary)
     print(CANDIDATE, json.dumps(summary['by_dataset'], ensure_ascii=False))
     print('集計:', output_dir/'summary.json')
-

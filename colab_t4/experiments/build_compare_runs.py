@@ -51,7 +51,7 @@ TRAIN_CACHE_SPECS += [
     print('集計:', output_dir/'summary.json')
 '''
  parts.append(s)
-worker='\n\n'.join(parts)+'\n'
+worker='\n\n'.join(parts).rstrip()+'\n'
 compile(worker,'compare_worker','exec')
 (HERE/'compare_runs_worker.py').write_text(worker)
 helper=(HERE/'run02_launcher.py').read_text()
