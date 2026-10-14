@@ -343,3 +343,14 @@ ZIP の CRC と展開ファイルのバイト一致は全件成功。展開原�
 新しいColab T4で「すべて実行」を1回押し、run02と同じGoogleアカウントでDriveを認証する。ZIPは不要。完了は `RUN03_TRAINING_COMPLETE`、保存先は `geniac_workspace/adapters/t4_20261014_run03_prmfull6k_stage2/`。run03のGPU学習は未実行。
 
 ローカルの機械的事前処理は完了：6,000件、1,598,551トークン、平均266.425、最大1,923、全件EOSあり。run02の528,362トークンの約3.03倍。学習時間の粗い見積もりは約71分＋環境構築・取得・mergeであり、実測ではない。学習後はrun02と同じ固定devで比較し、次の公式提出を判断する。0.22超えの保証はない。
+
+
+## run03完了確認とrun02/run03自動比較
+
+共有Driveのrun03 `training_summary.json` を確認：`complete=true`、6,000件、375ステップ、1 epoch、学習4127.5154秒（68.8分）、平均loss 0.6082207。run02より学習lossは低いが、教材件数が違うため、それだけで性能改善とは判断しない。
+
+比較は [compare_run02_run03_t4.ipynb](colab_t4/experiments/compare_run02_run03_t4.ipynb) を新しいColab T4で開き、「すべて実行」して学習時のDriveを認証する。ZIP・HF token入力・手動再起動は不要。親kernelはGPUライブラリを読み込まず、run02 merge→評価→run03 merge→評価を別プロセスで実行する。GPUの90%以上が空いていなければ、他のカーネルを停止せずエラーにする。
+
+固定quick128問（PRM96/GSM32）、同一Base commit・Stage 1・配布template・最大入力長4096・出力上限2048・greedy/seed42で比較。両モデルの全学習cache（run01 Stage 1/2、run02、run03）と固定dev/finalの重複を検査。固定splitがない場合は新規選択せず停止。ローカルで全cacheの除外整合性とquick128問のgold解析成功を確認済み。公式問題・公式提出ファイルにはアクセスしない。
+
+途中回答はDriveに保存し、同じ条件で再実行すると再開。モデル・条件が違う途中結果は混ぜない。終了表示は `RUN02_RUN03_COMPARISON_COMPLETE`。共有する集計は `geniac_workspace/dev_eval/comparisons/run02_run03_v1/quick/comparison_summary.json`。本文を含まない正答率・抽出失敗率・長さ打切り率と、run02だけ正解/run03だけ正解の件数を出す。400問で確認する場合は `EVAL_SIZE='dev'` に変更する（出力先は別）。公式スコアの推定値ではない。GPU上での比較実行はまだ未実施。
