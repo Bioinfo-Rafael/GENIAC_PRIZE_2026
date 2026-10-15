@@ -6,7 +6,7 @@
 
 ## 初回の取得
 
-Python 3.10〜3.12（推奨3.11）、Linux、NVIDIA GPU約48GB、環境構築後60GiB以上の空き容量が必要。ホストのPython・既存venvは変更せず、`~/geniac_math`内に学習用とvLLM評価用のvenvを作る。ドライバ570向けにtorch2.8.0のcu128を指定する。
+Python 3.10〜3.12（推奨3.11）、Linux、NVIDIA GPU約48GB、環境構築後60GiB以上の空き容量が必要。起動スクリプトは対応するPythonを自動検出する。ホストにない場合は[uvの公式インストーラー](https://docs.astral.sh/uv/getting-started/installation/)を使い、作業領域内にPython 3.11を準備する。ホストのPython・既存venvは変更せず、`~/geniac_math`内に学習用とvLLM評価用のvenvを作る。ドライバ570向けにtorch2.8.0のcu128を指定する。
 
 リポジトリ全体の作業ファイルは不要。新しく実行専用checkoutを作る場合：
 
@@ -47,7 +47,7 @@ nohup bash remote/math_training/launch.sh \
 echo "PID=$! RUN=$GENIAC_RUN_ID"
 ```
 
-`python3`が3.13以降なら、起動前に`export GENIAC_BOOTSTRAP_PYTHON=python3.11`とする。既存venvをactivateする必要はない。初回は依存パッケージ・Base重みの取得を含み、これも180分の予算に入る。次回はvenv・HFキャッシュ・入力を再利用する。依存導入だけで時間を使い切った場合、console logに残り、GPU学習は始まらない。同じコマンドを後で実行して準備を継続できる。
+`python3`が3.13以降でも、`python3.11`などがあれば自動で選ぶ。なければuvがPython 3.11を取得する。明示指定したい場合だけ`export GENIAC_BOOTSTRAP_PYTHON=/path/to/python3.11`を使う。既存venvをactivateする必要はない。初回はPython・依存パッケージ・Base重みの取得を含み、これも180分の予算に入る。次回はvenv・HFキャッシュ・入力を再利用する。依存導入だけで時間を使い切った場合、console logに残り、GPU学習は始まらない。同じコマンドを後で実行して準備を継続できる。
 
 Driveへのアクセス制限・日次ダウンロード上限などが生じた場合はエラーで止まる。異なる重みへの代替や、ハッシュが違うファイルの採用は行わない。
 

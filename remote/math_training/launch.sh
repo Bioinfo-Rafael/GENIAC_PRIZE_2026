@@ -16,8 +16,8 @@ mkdir -p "$TASK_WORKSPACE"
 # Lock also covers installation; two background launches must not edit the same venv.
 exec 9>"$TASK_WORKSPACE/.launch.lock"
 flock -n 9 || { echo 'Another launch is active in this workspace'; exit 1; }
-TASK_PYTHON="${GENIAC_BOOTSTRAP_PYTHON:-python3}"
-"$TASK_PYTHON" -c 'import sys; assert (3,10) <= sys.version_info[:2] <= (3,12), "Use Python 3.10–3.12 (recommended 3.11)"'
+source "$TASK_CODE_DIR/bootstrap_python.sh"
+select_bootstrap_python "$TASK_WORKSPACE" "$((TASK_STARTED_AT + TASK_BUDGET * 60))"
 TASK_TRAIN_ENV="$TASK_WORKSPACE/.venv-train"
 TASK_EVAL_ENV="$TASK_WORKSPACE/.venv-eval"
 export TOKENIZERS_PARALLELISM=false
@@ -29,7 +29,16 @@ install_env() {
   marker="$env_dir/.requirements.sha256"
   expected="$(sha256sum "$requirements" | cut -d ' ' -f 1)"
   if [[ -f "$marker" ]] && [[ "$(cat "$marker")" == "$expected" ]]; then return; fi
-  if [[ ! -x "$env_dir/bin/python" ]]; then "$TASK_PYTHON" -m venv "$env_dir"; fi
+  if [[ ! -x "$env_dir/bin/python" ]]; then
+    if (( TASK_MANAGED )); then
+      remaining=$((TASK_BUDGET * 60 - $(date +%s) + TASK_STARTED_AT - 60))
+      if ((remaining <= 0)); then echo 'Budget exhausted before Python 3.11 setup'; exit 75; fi
+      timeout "$remaining" "$TASK_UV" venv --python 3.11 --seed "$env_dir"
+    else
+      "$TASK_PYTHON" -m venv "$env_dir"
+    fi
+  fi
+  "$env_dir/bin/python" -c 'import sys; assert (3,10) <= sys.version_info[:2] <= (3,12), "Existing venv has unsupported Python; use a new workspace"'
   remaining=$((TASK_BUDGET * 60 - $(date +%s) + TASK_STARTED_AT - 60))
   if ((remaining <= 0)); then echo 'Budget exhausted during environment setup'; exit 75; fi
   timeout "$remaining" "$env_dir/bin/python" -m pip install 'pip==25.2'
