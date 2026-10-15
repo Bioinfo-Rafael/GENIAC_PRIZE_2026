@@ -1,0 +1,23 @@
+{
+  "base_model": "Qwen/Qwen3-4B-Base",
+  "base_revision": "906bfd4b4dc7f14ee4320094d8b41684abff8539",
+  "stage2_sha256": "19bd859eb2b6334c6bef12f66b9b4b260f0dd68ea940ffc30a68085d4c674d57",
+  "prompts": 512,
+  "pilot_prompts": 128,
+  "generations": 4,
+  "min_pairs": 64,
+  "seed": 42,
+  "temperature": 0.7,
+  "top_p": 0.95,
+  "max_tokens": 2048,
+  "context": 4096,
+  "epochs": 2,
+  "learning_rate": 0.000005,
+  "beta": 0.1,
+  "effective_batch": 16,
+  "microbatch": 2,
+  "dtype": "float16",
+  "eval_chunk": 32,
+  "vllm_memory": 0.8,
+  "checkpoint_every": 5
+}

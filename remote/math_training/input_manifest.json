@@ -1,0 +1,76 @@
+{
+  "files": [
+    {
+      "path": "stage1/adapter_config.json",
+      "drive_id": "1a7tBUwnYtnLrRklb4BXwK3LJTZQVzFJh",
+      "sha256": "6a70b2f74435f0d8dcb23e24af8ab52f3fe0be09927797468b6e97eac1ee12f1",
+      "bytes": 1309
+    },
+    {
+      "path": "stage1/adapter_model.safetensors",
+      "drive_id": "1t0GFdSmYVrsXirSpNSEoI4p0Mc1hDKmO",
+      "sha256": "8daee3c3c9a1627263b746e366938ddc53232f75dcf1f416c135c58bf042a709",
+      "bytes": 66126768
+    },
+    {
+      "path": "stage1/chat_template.jinja",
+      "drive_id": "1IdkvCYuOXuAi37CpD-1XvXgIKOAPfbTc",
+      "sha256": "64f85b198065d0fba2a81f37e10ed68161ce2c19a754c7100e67e0ca2ee9c326",
+      "bytes": 2630
+    },
+    {
+      "path": "stage1/tokenizer_config.json",
+      "drive_id": "1DfFfrYqb1T4Y4_FgJTY6ebFTkQAZV2Fb",
+      "sha256": "2a44d8c432921732ca482cb39e22a7ad22465e7e7d8f17056bf96074366af035",
+      "bytes": 5449
+    },
+    {
+      "path": "stage1/tokenizer.json",
+      "drive_id": "1q6Z3xmF7PlkOMC6UXGz2Mm-vnA6Tqf2J",
+      "sha256": "476870a1f2fb6f6a2759a6ede2383bf9d5d738f17844563b65c91965b722ae09",
+      "bytes": 11422924
+    },
+    {
+      "path": "stage2/adapter_config.json",
+      "drive_id": "17AnxWQFcmgrhx9tuiW4fp_7BKMvQiVLl",
+      "sha256": "0fffd8d172e2b11b06ac6f41cbc5cf12b1fe9eb8ad8ae0d75359e3a639404214",
+      "bytes": 1319
+    },
+    {
+      "path": "stage2/adapter_model.safetensors",
+      "drive_id": "1qyBML_2lJjpCEbWYi2CWSS178oiGgvvc",
+      "sha256": "19bd859eb2b6334c6bef12f66b9b4b260f0dd68ea940ffc30a68085d4c674d57",
+      "bytes": 66126768
+    },
+    {
+      "path": "stage2/chat_template.jinja",
+      "drive_id": "1MboXH9vIVGfjE4Ie6p8kH9bgYiphroaJ",
+      "sha256": "64f85b198065d0fba2a81f37e10ed68161ce2c19a754c7100e67e0ca2ee9c326",
+      "bytes": 2630
+    },
+    {
+      "path": "stage2/tokenizer_config.json",
+      "drive_id": "18hefsIQt-YdzSv3d-xNNLCcjqRtCUvaj",
+      "sha256": "448328ed085ed1bf9282399414daf34dd66c4975f30dd06b6576e11d5c0ebcc8",
+      "bytes": 5448
+    },
+    {
+      "path": "stage2/tokenizer.json",
+      "drive_id": "1Kji4SHUkUbJedGtoEwA4nFXhKzBGo5oN",
+      "sha256": "476870a1f2fb6f6a2759a6ede2383bf9d5d738f17844563b65c91965b722ae09",
+      "bytes": 11422924
+    },
+    {
+      "path": "train.jsonl",
+      "drive_id": "1T9Z5EV0lGq0wP5NNPyMhPnrJ8JGPcmIU",
+      "sha256": "4705f95d44ae723bd65b1a83e24b33a95a3fbf827c5ca07d412fbf1f04a9b261",
+      "bytes": 5037227
+    },
+    {
+      "path": "split.json",
+      "drive_id": "18sLIV32cazvcoZbHvtDEqYYSCxCCBvFa",
+      "sha256": "d0fb00708ca3c6f6eacc83fded2656caeaff7980a3d6f3315d6df8212ef4773f",
+      "bytes": 388340
+    }
+  ]
+}
