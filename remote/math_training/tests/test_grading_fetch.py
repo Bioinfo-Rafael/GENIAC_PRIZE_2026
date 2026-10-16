@@ -15,6 +15,25 @@ def test_does_not_pick_matching_intermediate_number():
     assert grade(row,'No answer',numeric_answer('42'))['extraction_failed']
 
 
+def test_symbolic_timeout_is_recorded_without_stopping_generation(monkeypatch):
+    import grading
+    import math_verify
+    from math_verify.errors import TimeoutException
+    row = {'id': 'problem-1', 'dataset': 'prm800k', 'answer': '2'}
+
+    def timeout(*args, **kwargs):
+        raise TimeoutException('Operation timed out!')
+
+    monkeypatch.setattr(math_verify, 'verify', timeout)
+    result = grading.grade(row, r'\boxed{2}', [2])
+    assert not result['correct'] and result['grader_error']
+
+    monkeypatch.setattr(grading, 'parse_math', timeout)
+    gold, failures = grading.prepare_gold([row])
+    assert gold[row['id']] is None
+    assert failures == {'prm800k': 1}
+
+
 def test_only_pinned_files_downloaded_and_corruption_rejected(tmp_path,monkeypatch):
     source=tmp_path/'source';source.write_bytes(b'known')
     manifest={'files':[{'path':'stage2/adapter_model.safetensors','drive_id':'example','sha256':sha(source)}]}

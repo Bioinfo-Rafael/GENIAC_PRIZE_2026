@@ -71,9 +71,13 @@ def parse_math(answer):
 
 
 def prepare_gold(rows):
+    from math_verify.errors import TimeoutException
     gold, failures = {}, Counter()
     for row in rows:
-        value = numeric_answer(row['answer']) if row['dataset'] == 'gsm8k' else parse_math(row['answer'])
+        try:
+            value = numeric_answer(row['answer']) if row['dataset'] == 'gsm8k' else parse_math(row['answer'])
+        except TimeoutException:
+            value = None
         if value is None or value == []:
             failures[row['dataset']] += 1
         gold[row['id']] = value
@@ -81,6 +85,7 @@ def prepare_gold(rows):
 
 
 def grade(row, text, gold):
+    from math_verify.errors import TimeoutException
     candidate, method = final_candidate(text)
     result = {'correct': False, 'extraction_failed': True, 'answer_method': method,
               'grader_error': False, 'gold_unparseable': gold is None or gold == []}
@@ -97,7 +102,7 @@ def grade(row, text, gold):
             result['extraction_failed'] = not bool(pred)
             result['correct'] = (not result['gold_unparseable'] and bool(pred)
                                  and bool(verify(gold, pred, strict=True, timeout_seconds=3, raise_on_error=True)))
-    except Exception:
+    except (Exception, TimeoutException):
         result['grader_error'] = True
     return result
 
