@@ -16,7 +16,7 @@ def collate(rows, pad_id, device):
             [('input_ids', ids), ('labels', labels), ('attention_mask', masks)]}
 
 
-def sequence_logps(logits, labels, chunk=64):
+def sequence_logps(logits, labels, chunk=64, dft=False):
     # Chunk+checkpoint the vocabulary normalization; avoid a full FP32 logits copy.
     logits, labels = logits[:, :-1], labels[:, 1:]
     total = logits.new_zeros(logits.shape[0], dtype=torch.float32)
@@ -27,7 +27,10 @@ def sequence_logps(logits, labels, chunk=64):
             valid = y != -100
             values = -F.cross_entropy(x.float().reshape(-1, x.shape[-1]),
                                       y.reshape(-1), ignore_index=-100, reduction='none')
-            return (values.reshape_as(y) * valid).sum(-1)
+            values = values.reshape_as(y)
+            if dft:
+                values = values * values.detach().exp()
+            return (values * valid).sum(-1)
         total = total + (checkpoint(reduce, part, target, use_reentrant=False)
                          if torch.is_grad_enabled() else reduce(part, target))
     return total, count
@@ -35,3 +38,9 @@ def sequence_logps(logits, labels, chunk=64):
 
 def dpo_loss(chosen, rejected, ref_chosen, ref_rejected, beta):
     return -F.logsigmoid(beta * ((chosen - ref_chosen) - (rejected - ref_rejected)))
+
+
+def preference_objective(chosen, rejected, ref_chosen, ref_rejected, beta,
+                         group_size, chosen_token_total, nll_weight=0.):
+    return (dpo_loss(chosen,rejected,ref_chosen,ref_rejected,beta).sum()/group_size
+            - nll_weight*chosen.sum()/chosen_token_total)

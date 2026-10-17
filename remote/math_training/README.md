@@ -4,6 +4,73 @@
 
 7問やfix7は入力しない。既存教材を固定seed・3:1の比率で最大512問抽出し、各問4生成して正誤を採点する。正常終了して判定できた正解/誤答を1ペアずつ作り、同じrun03からRFTとDPOを別々に学習する。RFTはペアの正解のみ、DPOは正負両方を使う。DPOの固定参照はrun03そのもの。途中終了・解析不能を計算上の負例にしない。
 
+## 8時間の比較実験を実行する
+
+`--suite`で後続の比較実験を実行できる。元の180分pilotは`--suite`なしで引き続き実行できる。suiteは2つの対照＋5方式、別seedによる再確認、時間に収まる場合の6000問への拡張、未使用final400での最終確認を1ジョブで順次処理する。新方式のGPU通し実行はまだ未確認。ローカルでは損失・キャッシュ検証・模擬GPUによる全体制御をテストしている。
+
+今回完了したrunを利用するコマンド：
+
+```bash
+cd ~/geniac-remote
+git pull --ff-only origin main
+mkdir -p "$HOME/geniac_math"
+GENIAC_SUITE_ID="suite8h_$(TZ=Asia/Tokyo date +%Y%m%d_%H%M%S)"
+nohup bash remote/math_training/launch.sh --suite \
+  --workspace "$HOME/geniac_math" \
+  --run-id "$GENIAC_SUITE_ID" \
+  --source-run "$HOME/geniac_math/runs/ada_20261016_221122" \
+  --budget-minutes 480 \
+  > "$HOME/geniac_math/$GENIAC_SUITE_ID.console.log" 2>&1 < /dev/null &
+echo "PID=$! SUITE=$GENIAC_SUITE_ID"
+```
+
+前回runの重み・生成答案・ペア・環境記録・code snapshotを使うので、完了まで元runを移動/削除しない。前回runは変更しない。旧pilot（a3b82b4）の生成コード、モデル設定、split、入力manifest、採点コード、tokenizer、導入パッケージの一致を検証する。不一致は理由を表示して停止し、未検証キャッシュを黙って使わない。`--source-run`を省略した新しいsuiteではb0の生成から実行する。
+
+```bash
+tail -f "$HOME/geniac_math/$GENIAC_SUITE_ID.console.log"
+# 終了後：
+cat "$HOME/geniac_math/suites/$GENIAC_SUITE_ID/suite_report.json"
+```
+
+`tail -f`はCtrl+Cで閉じても本体は継続する。別のシェルでは`GENIAC_SUITE_ID`に表示されたsuite名を設定する。
+
+比較条件：
+
+| ID | 方式 | 生成問題数 | 学習データ | LR / epoch |
+| --- | --- | ---: | --- | --- |
+| c1_rft_512 | RFT | 512（既存） | 元の混在183問の正解 | 5e-6 / 1 |
+| c2_rft_low_lr_512 | RFT | 512（既存） | 同じ183件 | 1e-6 / 1 |
+| e1_rft_mixed | RFT | 2048 | 正誤混在問題の正解 | 5e-6 / 1 |
+| e2_rft_positive | RFT | 2048 | 正解のみ問題も含む、1正解/問 | 5e-6 / 1 |
+| e3_dft_positive | DFT | 2048 | e2と同じ | 5e-6 / 1 |
+| e4_dpo | DPO | 2048 | 正誤混在問題の1ペア/問 | 5e-6 / 1 |
+| e5_dpo_nll | DPO＋正解NLL（係数0.1） | 2048 | e4と同じ | 5e-6 / 1 |
+
+正解例は固定seedで選び、人が問題や答案を選ばない。反復フィルタ・最短答案優先も追加していない。DPOのbetaは0.1。各方式は同じrun03から独立開始し、生成poolは共通。学習中のモデルでは生成しない。試走は最長側の例でmicrobatch 2/4/8を比較し、effective batch16は固定。OOMになったサイズは記録して除外する。半分/終了時のアダプターも保存するが、今回の自動採用候補は1 epoch終了時に固定する。
+
+最初に終了ラベル・EOS設定・保存再読込時のlogit一致を点検し、無更新のアダプターを統合してdev先頭32問の生成がb0と一致することを確認する。不一致なら学習比較に進まず停止する。テンプレート末尾の余分なtokenはauditに記録し、既存pilotとの比較のためこの実験では変更しない。無更新検査は全400問での数値同一性や量子化の無影響を保証するものではない。
+
+時間配分は点検30分・対照45分・2048問生成75分・主比較120分・追加確認90分・final60分・予備60分。これは上限枠で、待機して8時間を埋める処理はない。生成・評価・初期準備も480分に含める。最終評価用の60分を残して追加実験を停止する。6000問への拡張は実測スループットで時間内と見込めた場合のみ。計画にあった「改善モデルによる再生成」は今回は選ばず、データ拡張を実装した。
+
+devで+2ポイント、反復/非stopの悪化が各+3ポイント以内、GSMの悪化が4問以内の候補から最良を選び、同じデータ・shuffle seed43で再学習して再確認する。両seedで基準を満たした場合に候補を固定する。条件を満たす候補がなければb0を維持する。これは探索ルールであり有意差の保証ではない。
+
+候補のdev選択を`selection.json`へ固定してからfinal400を評価する。finalを見て別の候補へ選び直す処理はない。finalの差の95%区間が0をまたぐ、または品質基準を満たさない場合、`recommendation`はb0維持になる。7問/fix7の監査と公式提出はこのジョブに含まない。
+
+主な成果物は`~/geniac_math/suites/<suite名>/`：
+
+- `suite_report.json`：候補別dev成績・正誤変化・区間、再現確認、final比較、推奨アダプター。
+- `status.json`：`suite_complete`、`suite_complete_no_improvement`、`time_limited`、`interrupted`、`failed`。
+- `suite_report.json`の`incomplete_trials`：時間切れや失敗の候補。suite完了は全候補の成功を意味しない。
+- `logs/`：全phaseの詳細ログ。consoleにもphaseと候補ごとの結果を表示。
+- `audit/`：終端ラベル・保存再読込・無更新生成の比較。
+- `trials/<候補>/training/{rft,dpo}/final/`：候補アダプター。DFTはrft、DPO+NLLはdpoの下。
+- `trials/<候補>/training/{rft,dpo}/train.jsonl`：loss、gradient norm、log probabilityやpreference margin。
+- `pools/`：生成文と自動選別結果。答案本文は編集しない。
+
+候補の比較用統合モデルはdev評価後に削除してディスクを節約する。アダプター・checkpoint・生成結果を保持し、最終候補だけfinal前に再統合する。b0・Stage 1の元runのモデルは削除しない。`recommended_adapter`は共通Stage 1に適用するStage 2アダプターであり、run03と重ねて適用しない。
+
+中断からの再開は同じコード・環境で上の起動コマンドに`--resume`を追加し、元のsuite名と同じ`--source-run`を指定する。手動再開は新しい最大480分枠となる。コード変更後の混在再開は拒否するので、保存snapshotの`code/launch.sh --suite`を使うか、新しいsuite名にする。再開時にもfinal前の選択は固定されたまま。
+
 ## 初回の取得
 
 Python 3.10〜3.12（推奨3.11）、Linux、NVIDIA GPU約48GB、環境構築後60GiB以上の空き容量が必要。起動スクリプトは対応するPythonを自動検出する。ホストにない場合は[uvの公式インストーラー](https://docs.astral.sh/uv/getting-started/installation/)を使い、作業領域内にPython 3.11を準備する。ホストのPython・既存venvは変更せず、`~/geniac_math`内に学習用とvLLM評価用のvenvを作る。ドライバ570向けにtorch2.8.0のcu128を指定する。
@@ -128,9 +195,9 @@ nohup "$HOME/geniac_math/.venv-train/bin/python" -u \
 - `generations/`：回答本文・生トークンID・finish/stop reason・採点。本文は編集しない。
 - `context.json`、`packages_*.json`、`code/`：設定・入力hash・環境・実行コード。
 
-初回実装の範囲はRFT/DPOのquick/dev比較まで。ペア不足時は自動で別方式を開始せず、診断を保存する。DFT/GRPO/Self-Explore、未使用final400での採用判定、公式推論・提出は別の後続作業。7問をその場で評価して設定を変える処理も含めない。
+元の`run.py`の範囲はRFT/DPOのquick/dev比較まで。ペア不足時は自動で別方式を開始せず、診断を保存する。後続の`suite.py`はDFTとfinal400評価にも対応する。GRPO/Self-Explore、公式推論・提出は別の後続作業。7問をその場で評価して設定を変える処理も含めない。
 
-ローカルでは実入力のSHA・非重複・tokenizer、lossの値と勾配、padding/勾配累積、小さなQwen3＋LoRAの実際のbackward、保存/再開をテストする。**RTX 6000 Ada上のCUDA・bitsandbytes・vLLMの通し実行は未検証**。依存は直接依存を固定しており、実際の全導入版をrunごとに記録する。初回のGPU実行でメモリ・速度・互換性を確認する。
+ローカルでは実入力のSHA・非重複・tokenizer、lossの値と勾配、padding/勾配累積、小さなQwen3＋LoRAの実際のbackward、保存/再開をテストする。ユーザー提供の`ada_20261016_221122`ログではRTX 6000 Ada環境でdev400比較まで完了した。依存は直接依存を固定しており、実際の全導入版をrunごとに記録する。
 
 開発用テスト：
 
@@ -139,3 +206,89 @@ python -m pytest -q remote/math_training/tests
 python -m compileall -q remote/math_training
 bash -n remote/math_training/launch.sh
 ```
+
+## 計画の記録：合計8時間の比較実験（2026-10-17）
+
+予算はRTX 6000 Ada 48GB 1枚での生成・学習・評価を合計した480分。実装時間は含めない。以下は元の計画を記録したもの。実装済みの範囲と実行手順は冒頭の「8時間の比較実験を実行する」を参照。元のrun.pyは180分pilotとして維持し、480分の実験はsuite.pyで実行する。
+
+### 根拠となる今回の成績
+
+ユーザーから受領した`ada_20261016_221122`のreportと学習ログ。公式スコアではない。リモート成果物本体はローカルへ取得していない。
+
+| モデル | dev400正解数 | 正答率 | 反復検出数 | 正常stop以外 | 平均出力token |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| b0 (run03) | 253 | 63.25% | 121 | 123 | 753.90 |
+| RFT | 255 | 63.75% | 196 | 202 | 1128.46 |
+| DPO | 253 | 63.25% | 123 | 127 | 772.43 |
+
+RFTは14問改善・12問悪化、差のpaired bootstrap 95%区間は[-2.0,+3.0]ポイント。DPOは3問改善・3問悪化、[-1.25,+1.25]ポイント。正答率の明確な改善は確認できていない。
+
+512問×4生成から有効正解1193件・誤答741件。正解のみ210問、正誤混在183問、誤答のみ118問、使用不能1問。両枝とも混在183問から1組ずつ取り、2 epoch、24更新。RFTには正解のみ210問が未使用。chosenの反復は3/183、中央値61単語、90%点132単語で、反復答案の大量混入という仮説は支持されない。単語数をreportのtoken数と直接比較しない。DPOの終盤lossは約0.60だが、これだけで未学習・収束・飽和とは判断できない。
+
+### 0. 比較前の点検（上限30分）
+
+- tokenizerのEOS、im_end、generation_configのstop IDs、教師答案末尾とcompletion maskを実トークンで確認する。テンプレートが終端と改行を付けた後にEOSを追加する経路があり、生成時の終端と整合するか確認する。現段階でバグとは断定しない。
+- 同一32問でb0の学習前後の量子化/統合経路、最終回答より後の反復、EOS確率を確認。学習前の再保存・統合だけでも結果が変わる場合は原因修正を優先する。
+- DPOはchosen/rejectedそれぞれの平均token log probability、参照からの差、preference margin・正解率、gradient norm、実更新回数を記録。loss低下だけで判断しない。
+- 採点不能は負例にしない。採点タイムアウトは記録して継続。終了・採点・token化の不具合があれば、共通修正後にb0から比較し直し、旧結果との単純比較は避ける。
+
+### 1. 学習量の対照（上限45分）
+
+保存済み183ペアと生成結果をハッシュ付きで再利用し、run03から独立に実行する。元runのsnapshotを書き換えない。
+
+| ID | 学習例 | 方法 | peak LR | epoch | 問い |
+| --- | --- | --- | --- | --- | --- |
+| C1 | 元のchosen183件 | RFT | 5e-6 | 1 | 2 epochより前なら反復増加を避けられるか |
+| C2 | 同じ183件 | RFT | 1e-6 | 1 | 更新幅を小さくすると正解を維持できるか |
+
+0.5/1 epochのcheckpointを保存。quick128は異常検出のみ、採用判定はdev400で行う。C1と元2 epochはcosine scheduleの長さも異なるため、epoch数だけの厳密な因果比較とは呼ばない。
+
+### 2. 共通生成データの拡張（上限75分）
+
+元の6000教材から固定seed・PRM:GSM=3:1で2048問を選び、run03から各4回答生成する。7問/fix7、dev/finalを入力・選別に使わない。既存512問を含む固定順序にし、モデル・問題・生成設定・tokenizer・採点コードの一致を検証して再利用する。生成文の手修正はしない。
+
+二つのデータを同じ生成結果から作る。Mは正誤混在問題の1ペア/問。Pは少なくとも一つ有効な正解のある全問題から、固定seedで1正解/問（正解のみ問題も含む）。MのchosenとPの対応答案は同じにする。183/512と393/512の比率が続けば、M約730組、P約1570件が見込まれるが、実数を記録する。答案の最短選択や反復フィルタは主実験に追加しない。
+
+### 3. 五つの方式を比較（上限120分）
+
+すべてrun03から独立に開始。初期比較はLR=5e-6、1 epoch、effective batch=16、同じ生成・採点条件。DFT等でlossの数値スケールは異なるため、lossの大小で方式を順位づけしない。
+
+| ID | 方法 | データ | 確かめること |
+| --- | --- | --- | --- |
+| E1 | RFT | Mのchosen | C1に対し問題数を増やす効果 |
+| E2 | RFT | P | 正解のみ問題も使う効果（標本数・分布・更新数が変わる実用比較） |
+| E3 | DFT | E2と同じP | token確率で重み付けする目的関数の効果 |
+| E4 | DPO | M | 元183組より大きいペア集合での効果、beta=0.1 |
+| E5 | DPO + 正解NLL | E4と同じM | 正解を誤答より優先するだけでなく、正解自体の確率を維持・増加させる効果 |
+
+DFTはtokenごとの`-stop_gradient(p)*log(p)`をcompletionに適用。E5はDPOのsequence-sum定義を維持し、chosenのtoken平均NLLを係数0.1で加える探索設定。論文そのままの再現とは称さない。係数・LRの変更は追加実験として記録する。
+
+### 4. 有望な方式の追加確認（上限90分）
+
+dev400で改善し、反復・stop・GSMの大きな悪化がない上位方式を最大2つに絞る。まず最良方式を別の学習shuffle seedで再学習して再現性を見る（生成データは共通）。残りは、実測時間に応じて次のどちらか一つへ配分する。
+
+- データ拡張：2048→最大6000問へ固定順序を延長し、同じ方式をrun03から再学習。改善がデータ量に応じて続くか確認。
+- 生成更新：最良モデルで同じ2048問を再生成し、新しい正解/誤答から短く追加学習。固定データを繰り返す場合との差を調べる。
+
+全方式が悪化なら拡張を行わず、反復・停止・忘却の診断へ戻す。初回8時間枠に新規GRPO基盤の構築と多数の係数探索は入れない。
+
+### 5. 最終確認（上限60分）と予備（60分）
+
+30+45+75+120+90+60+60=480分。前回の約30数分の通し実行を参考にした予算配分で、所要時間の保証ではない。実測で見積もりを更新し、最終評価60分を確保できない追加実験は始めない。データ拡張を優先度順に省き、比較条件を途中で黙って変えない。
+
+- dev400での実用的な目標はb0より+2ポイント（8問）以上、反復率・non-stop率の悪化は各+3ポイント以内。GSMで5問以上の悪化は自動採用せず精査する。これらは探索上の基準で、統計的有意性を意味しない。
+- 最終候補をdevだけで1つ固定して、未使用final400でb0との比較を一度行う。finalを見て係数・checkpoint・候補を再選択しない。
+- paired bootstrap区間、正解→誤答/誤答→正解、PRM/GSM別、採点不能・反復・終了率を報告。多候補探索後のdev差を確証扱いしない。finalで区間が0をまたぐ場合も「改善確定」としない。
+- 最終答案はモデルの単一生成で評価。7問は設定選択から隔離し、最終候補を固定した後の参考監査だけに使う。dev/finalと公式提出スコアは区別する。
+
+### 実装時の変更点
+
+共通生成キャッシュの検証付き共有、M/Pの分離、DFTとDPO+NLL、epoch別checkpoint、追加診断、final split評価、480分を管理する実験スケジューラーが必要。既存runの再開署名を回避せず、各branchの親モデル・データhash・設定を記録する。GPUは1ジョブずつ使用。microbatchは2→4→8を実測し、effective batch16を維持して速い設定を採る。精度/量子化設定の変更は別の要因になるため、主比較と混ぜない。
+
+### 文献と適用範囲
+
+- [数学推論のRFTと推論経路の多様性](https://arxiv.org/abs/2308.01825)：正解生成の再学習を支持。今回のモデルでの改善保証ではない。
+- [Dynamic Fine-Tuning](https://arxiv.org/abs/2508.05629)：token確率による重み付けを提案。今回のQwen3 run03へ適用するのは新しい実験。
+- [Iterative Reasoning Preference Optimization](https://arxiv.org/abs/2404.19733)：数学推論でDPOに正解NLLを加える方法と反復生成を検討。E5と生成更新の動機。
+- [ReST-EM](https://arxiv.org/abs/2312.06585)：生成・正解検証・再学習を反復する根拠。
+- [DeepSeekMath / GRPO](https://arxiv.org/abs/2402.03300)：次段階のオンラインRL候補。今回は既存基盤で比較できる方式を先に検証する。

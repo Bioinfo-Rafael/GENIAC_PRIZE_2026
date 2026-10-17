@@ -5,7 +5,16 @@ TASK_CODE_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 TASK_WORKSPACE="${GENIAC_WORKSPACE:-$HOME/geniac_math}"
 TASK_STARTED_AT="$(date +%s)"
 TASK_BUDGET=180
-TASK_ARGS=("$@")
+TASK_ENTRY=run.py
+TASK_ARGS=()
+for task_arg in "$@"; do
+  if [[ "$task_arg" == --suite ]]; then
+    TASK_ENTRY=suite.py
+    TASK_BUDGET=480
+  else
+    TASK_ARGS+=("$task_arg")
+  fi
+done
 for ((i=0; i<${#TASK_ARGS[@]}; i++)); do
   case "${TASK_ARGS[$i]}" in
     --workspace) TASK_WORKSPACE="${TASK_ARGS[$((i+1))]}" ;;
@@ -53,6 +62,6 @@ install_env() {
 }
 install_env "$TASK_TRAIN_ENV" "$TASK_CODE_DIR/requirements-train.txt"
 install_env "$TASK_EVAL_ENV" "$TASK_CODE_DIR/requirements-eval.txt"
-exec "$TASK_TRAIN_ENV/bin/python" -u "$TASK_CODE_DIR/run.py" \
+exec "$TASK_TRAIN_ENV/bin/python" -u "$TASK_CODE_DIR/$TASK_ENTRY" \
   --workspace "$TASK_WORKSPACE" --eval-python "$TASK_EVAL_ENV/bin/python" \
   --started-at "$TASK_STARTED_AT" "${TASK_ARGS[@]}"

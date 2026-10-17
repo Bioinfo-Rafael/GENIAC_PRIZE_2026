@@ -45,6 +45,27 @@ def test_only_verifiable_complete_pairs():
     assert stats['outputs_unknown']==1 and stats['outputs_truncated']==1
 
 
+def test_positive_mode_recovers_correct_only_questions_and_preserves_mixed_choice():
+    rows=[{'id':x,'problem':x,'dataset':'gsm8k'} for x in ('mixed','correct','unknown')]
+    gen={'mixed':[output(0,True),output(1,True),output(2)],
+         'correct':[output(0,True),output(1,True)],
+         'unknown':[output(0,True,unknown=True),output(1,True,finish='length')]}
+    mixed,_=pairs_from_outputs(rows,gen,42)
+    positive,_=pairs_from_outputs(rows,gen,42,mode='positive')
+    assert [p['id'] for p in positive]==['mixed','correct']
+    assert mixed[0]['chosen']==positive[0]['chosen']
+    assert all('rejected' not in p for p in positive)
+
+
+def test_large_nested_pools_keep_heldout_exclusion_and_ratio():
+    train,split=fixtures()
+    small=prepare(train,split,512,42)
+    large=prepare(train,split,6000,42)
+    assert large[:512]==small and len(large)==6000
+    assert sum(r['dataset']=='gsm8k' for r in large[:2048])==512
+    with pytest.raises(ValueError):prepare(train,split,6004,42)
+
+
 class Tokenizer:
     eos_token_id=9
     def apply_chat_template(self,messages,tokenize=True,add_generation_prompt=False):

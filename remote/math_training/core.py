@@ -51,8 +51,8 @@ def fingerprint(path):
 
 
 def prepare(train, split, count, seed):
-    if count < 4 or count % 4:
-        raise ValueError('prompts must be a positive multiple of 4')
+    if count < 4 or count > 6000 or count % 4:
+        raise ValueError('prompts must be a multiple of 4 between 4 and 6000')
     if digest(split['split']) != split['split_sha256']:
         raise ValueError('Fixed split hash mismatch')
     heldout = split['split']['dev'] + split['split']['final']
@@ -89,7 +89,9 @@ def classify(output):
     return 'correct' if grade['correct'] else 'incorrect'
 
 
-def pairs_from_outputs(rows, generations, seed):
+def pairs_from_outputs(rows, generations, seed, mode='mixed'):
+    if mode not in ('mixed', 'positive'):
+        raise ValueError('Unknown data mode: ' + mode)
     pairs, stats = [], Counter()
     for row in rows:
         outputs = generations[row['id']]
@@ -104,11 +106,14 @@ def pairs_from_outputs(rows, generations, seed):
         good, bad = by_status['correct'], by_status['incorrect']
         kind = 'mixed' if good and bad else ('only_correct' if good else ('only_incorrect' if bad else 'unusable'))
         stats['questions_' + kind] += 1
-        if good and bad:
+        if good and (bad or mode == 'positive'):
             chosen = min(good, key=lambda x: digest([seed, row['id'], x['index']]))
-            rejected = min(bad, key=lambda x: digest([seed, row['id'], x['index']]))
-            pairs.append({'id': row['id'], 'problem': row['problem'], 'dataset': row['dataset'],
-                          'chosen': chosen['text'], 'rejected': rejected['text']})
+            pair = {'id': row['id'], 'problem': row['problem'], 'dataset': row['dataset'],
+                    'chosen': chosen['text']}
+            if mode == 'mixed':
+                rejected = min(bad, key=lambda x: digest([seed, row['id'], x['index']]))
+                pair['rejected'] = rejected['text']
+            pairs.append(pair)
     return pairs, dict(stats)
 
 

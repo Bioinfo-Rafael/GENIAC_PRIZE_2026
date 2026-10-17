@@ -3,7 +3,7 @@ from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import torch
 import torch.nn.functional as F
-from losses import sequence_logps,dpo_loss,collate
+from losses import sequence_logps,dpo_loss,collate,preference_objective
 
 
 def test_shift_mask_chunk_value_and_gradient():
@@ -20,6 +20,23 @@ def test_shift_mask_chunk_value_and_gradient():
     assert counts.tolist()==[5,3]
 
 
+def test_dft_stop_gradient_and_padding():
+    torch.manual_seed(8)
+    x=torch.randn(2,7,11,requires_grad=True)
+    y=torch.tensor([[-100,-100,3,4,5,6,7],[-100,1,3,4,-100,-100,-100]])
+    values,counts=sequence_logps(x,y,chunk=2,dft=True)
+    loss=-values.sum()/counts.sum()
+    ce=F.cross_entropy(x[:,:-1].reshape(-1,11),y[:,1:].reshape(-1),
+                       ignore_index=-100,reduction='none')
+    expected=(ce*torch.exp(-ce.detach())).sum()/counts.sum()
+    torch.testing.assert_close(loss,expected)
+    torch.testing.assert_close(torch.autograd.grad(loss,x,retain_graph=True)[0],
+                               torch.autograd.grad(expected,x)[0])
+    padded_x=torch.cat([x,torch.randn(2,3,11)],dim=1)
+    padded_y=torch.cat([y,torch.full((2,3),-100)],dim=1)
+    torch.testing.assert_close(sequence_logps(padded_x,padded_y,dft=True)[0],values)
+
+
 def test_dpo_reference_and_direction():
     c=torch.tensor([-4.],requires_grad=True)
     r=torch.tensor([-6.],requires_grad=True)
@@ -28,6 +45,20 @@ def test_dpo_reference_and_direction():
     loss.backward()
     assert c.grad.item()<0 and r.grad.item()>0
     assert dpo_loss(c.detach()+1,r.detach(),c.detach(),r.detach(),.1).item()<loss.item()
+
+
+def test_dpo_nll_increases_chosen_gradient_and_accumulates_exactly():
+    c=torch.tensor([-4.,-6.],requires_grad=True)
+    r=torch.tensor([-5.,-9.],requires_grad=True)
+    rc,rr=c.detach().clone(),r.detach().clone()
+    full=preference_objective(c,r,rc,rr,.1,2,10,.1)
+    parts=sum(preference_objective(c[i:i+1],r[i:i+1],rc[i:i+1],rr[i:i+1],.1,2,10,.1)
+              for i in range(2))
+    torch.testing.assert_close(full,parts)
+    hybrid_gradient=torch.autograd.grad(full,c,retain_graph=True)[0]
+    plain_gradient=torch.autograd.grad(preference_objective(c,r,rc,rr,.1,2,10),c)[0]
+    assert torch.all(hybrid_gradient < plain_gradient)
+    torch.testing.assert_close(torch.autograd.grad(parts,c)[0],hybrid_gradient)
 
 
 def test_padding_and_accumulation_invariance():

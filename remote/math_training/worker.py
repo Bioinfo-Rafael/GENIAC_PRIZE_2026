@@ -112,7 +112,8 @@ def merge(ctx, candidate):
 def generate(ctx, candidate, purpose, count):
     from vllm import LLM, SamplingParams
     cfg, root = ctx['config'], Path(ctx['run'])
-    rows = read(root / ('train_rows.json' if purpose == 'train' else 'eval_rows.json'))[:count]
+    rows = read(root / {'train':'train_rows.json', 'eval':'eval_rows.json',
+                        'final':'final_rows.json'}[purpose])[:count]
     dest = root / 'generations' / f'{candidate}_{purpose}.json'
     saved = read(dest) if dest.exists() else {}
     pending = [r for r in rows if r['id'] not in saved]
@@ -176,14 +177,19 @@ def token_pairs(ctx):
     root, cfg = Path(ctx['run']), ctx['config']
     rows = read(root / 'train_rows.json')
     generated = read(root / 'generations' / 'b0_train.json')
-    pairs, stats = pairs_from_outputs([r for r in rows if r['id'] in generated], generated, cfg['seed'])
+    pairs, stats = pairs_from_outputs([r for r in rows if r['id'] in generated], generated,
+                                     cfg['seed'], cfg.get('data_mode', 'mixed'))
     tok = tokenizer_for(Path(ctx['inputs']) / 'stage2')
     accepted = []
     for pair in pairs:
         chosen = tokenize_answer(tok, pair['problem'], pair['chosen'], cfg['context'])
-        rejected = tokenize_answer(tok, pair['problem'], pair['rejected'], cfg['context'])
-        if chosen is not None and rejected is not None:
-            accepted.append(dict(pair, chosen_tokens=chosen, rejected_tokens=rejected))
+        rejected = (tokenize_answer(tok, pair['problem'], pair['rejected'], cfg['context'])
+                    if 'rejected' in pair else None)
+        if chosen is not None and ('rejected' not in pair or rejected is not None):
+            item = dict(pair, chosen_tokens=chosen)
+            if rejected is not None:
+                item['rejected_tokens'] = rejected
+            accepted.append(item)
     stats.update(pairs=len(accepted), overlength_pairs=len(pairs)-len(accepted))
     if (root/'pairs.json').exists() and read(root/'pairs.json') != accepted:
         raise ValueError('Pair set changed on resume; use a new run')
@@ -210,14 +216,14 @@ def load_train_model(ctx, adapter=None):
     return model
 
 
-def logps(model, tok, rows, dtype):
+def logps(model, tok, rows, dtype, dft=False):
     import torch
     from losses import collate, sequence_logps
     batch = collate(rows, tok.pad_token_id, 'cuda')
     labels = batch.pop('labels')
     with torch.autocast('cuda', dtype=dtype):
         out = model(**batch)
-        return sequence_logps(out.logits, labels)
+        return sequence_logps(out.logits, labels, dft=dft)
 
 
 def reference(ctx):
@@ -247,7 +253,7 @@ def reference(ctx):
 
 def train(ctx, branch, benchmark=False):
     import torch
-    from losses import dpo_loss
+    from losses import preference_objective
     from transformers import get_cosine_schedule_with_warmup
     root, cfg = Path(ctx['run']), ctx['config']
     dest = root / 'training' / branch
@@ -255,14 +261,28 @@ def train(ctx, branch, benchmark=False):
     if not benchmark and check_model(dest / 'final'):
         return
     pairs = read(root / 'pairs.json')
-    refs = read(root / 'reference.json')['values']
-    training_signature = digest([ctx['signature'],sha(root/'pairs.json'),sha(root/'reference.json')])
-    groups = update_groups(len(pairs), cfg['epochs'], cfg['effective_batch'], cfg['seed'])
+    objective = cfg.get('objective', branch)
+    if objective not in ('rft', 'dft', 'dpo', 'dpo_nll'):
+        raise ValueError('Unknown objective: ' + objective)
+    preference = objective in ('dpo', 'dpo_nll')
+    refs = read(root / 'reference.json')['values'] if preference else {}
+    training_signature = digest([ctx['signature'],sha(root/'pairs.json'),
+                                 sha(root/'reference.json') if preference else None])
+    train_seed = cfg.get('train_seed', cfg['seed'])
+    groups = update_groups(len(pairs), cfg['epochs'], cfg['effective_batch'], train_seed)
     if not groups:
         raise ValueError('No training groups')
-    random.seed(cfg['seed'])
-    torch.manual_seed(cfg['seed'])
-    torch.cuda.manual_seed_all(cfg['seed'])
+    total_updates = len(groups)
+    if benchmark and cfg.get('suite_benchmark'):
+        # Probe the longest examples so a faster setting also fits later training batches.
+        order = sorted(range(len(pairs)), key=lambda i:max(
+            len(pairs[i][key]['input_ids']) for key in ('chosen_tokens','rejected_tokens')
+            if key in pairs[i]), reverse=True)
+        groups = [order[i:i+cfg['effective_batch']] for i in
+                  range(0,min(len(order),2*cfg['effective_batch']),cfg['effective_batch'])]
+    random.seed(train_seed)
+    torch.manual_seed(train_seed)
+    torch.cuda.manual_seed_all(train_seed)
     state_path = dest / 'latest.json'
     state_dir = dest / read(state_path)['checkpoint'] if state_path.exists() and not benchmark else None
     model = load_train_model(ctx, state_dir)
@@ -315,16 +335,31 @@ def train(ctx, branch, benchmark=False):
         optimizer.zero_grad(set_to_none=True)
         token_total = sum(sum(t != -100 for t in pairs[i]['chosen_tokens']['labels'][1:]) for i in group)
         loss_value = 0.
+        diagnostics = {'chosen_score_per_token':0., 'rejected_logp_per_token':0.,
+                       'chosen_reference_delta':0., 'rejected_reference_delta':0.,
+                       'preference_margin':0., 'preference_accuracy':0.}
         for offset in range(0, len(group), cfg['microbatch']):
             sub = [pairs[i] for i in group[offset:offset+cfg['microbatch']]]
-            if branch == 'rft':
-                values, _ = logps(model, tok, [p['chosen_tokens'] for p in sub], dtype)
+            if not preference:
+                values, counts = logps(model, tok, [p['chosen_tokens'] for p in sub],
+                                       dtype, dft=objective=='dft')
                 loss = -values.sum() / token_total
             else:
-                values, _ = logps(model, tok, [p['chosen_tokens'] for p in sub] +
+                values, counts = logps(model, tok, [p['chosen_tokens'] for p in sub] +
                                   [p['rejected_tokens'] for p in sub], dtype)
                 ref = torch.tensor([refs[p['id']] for p in sub], device='cuda')
-                loss = dpo_loss(values[:len(sub)], values[len(sub):], ref[:,0], ref[:,1], cfg['beta']).sum()/len(group)
+                loss = preference_objective(values[:len(sub)],values[len(sub):],ref[:,0],ref[:,1],
+                    cfg['beta'],len(group),token_total,
+                    cfg.get('nll_weight',.1) if objective=='dpo_nll' else 0.)
+                with torch.no_grad():
+                    dc, dr = values[:len(sub)]-ref[:,0], values[len(sub):]-ref[:,1]
+                    margin = cfg['beta']*(dc-dr)
+                    diagnostics['chosen_reference_delta'] += dc.sum().item()/len(group)
+                    diagnostics['rejected_reference_delta'] += dr.sum().item()/len(group)
+                    diagnostics['preference_margin'] += margin.sum().item()/len(group)
+                    diagnostics['preference_accuracy'] += (margin>0).sum().item()/len(group)
+                    diagnostics['rejected_logp_per_token'] += (values[len(sub):]/counts[len(sub):]).sum().item()/len(group)
+            diagnostics['chosen_score_per_token'] += (values[:len(sub)].detach()/counts[:len(sub)]).sum().item()/len(group)
             if not torch.isfinite(loss):
                 raise FloatingPointError('Nonfinite training loss')
             scaler.scale(loss).backward()
@@ -343,17 +378,78 @@ def train(ctx, branch, benchmark=False):
         with (dest / ('benchmark.jsonl' if benchmark else 'train.jsonl')).open('a') as f:
             import json
             f.write(json.dumps({'step':step, 'loss':loss_value, 'seconds':elapsed[-1],
-                                'max_vram':torch.cuda.max_memory_allocated()})+'\n')
+                                'max_vram':torch.cuda.max_memory_allocated(),
+                                'objective':objective, 'gradient_norm':norm.item(),
+                                'learning_rate':optimizer.param_groups[0]['lr'], **diagnostics})+'\n')
         if benchmark and step >= min(2, len(groups)):
             write(root / 'timings' / f'bench_{branch}.json', {'seconds_per_update': max(elapsed),
-                        'updates':len(groups), 'microbatch':cfg['microbatch']})
+                        'updates':total_updates, 'microbatch':cfg['microbatch']})
             return
+        if cfg.get('save_milestones') and step in {max(1, len(groups)//2), len(groups)}:
+            milestone = dest / 'milestones' / f'step-{step:05d}'
+            if not check_model(milestone):
+                milestone.parent.mkdir(parents=True, exist_ok=True)
+                save_model(model, tok, milestone)
         if step % cfg['checkpoint_every'] == 0:
             checkpoint_save()
     checkpoint_save()
     save_model(model, tok, dest / 'final')
     write(dest / 'complete.json', {'complete':True, 'updates':step, 'pairs':len(pairs),
                                  'signature':training_signature})
+
+
+def audit(ctx):
+    """Check actual terminal labels and save an unmodified adapter for roundtrip evaluation."""
+    import torch
+    from losses import collate
+    root, cfg = Path(ctx['run']), ctx['config']
+    tok = tokenizer_for(Path(ctx['inputs'])/'stage2')
+    model_config = read(root/'models/b0/config.json')
+    gen_path = root/'models/b0/generation_config.json'
+    gen_config = read(gen_path) if gen_path.exists() else {}
+    eos = gen_config.get('eos_token_id') or model_config.get('eos_token_id') or tok.eos_token_id
+    eos = [eos] if isinstance(eos, int) else eos
+    if not eos or tok.eos_token_id not in eos:
+        raise ValueError('Training tokenizer EOS is not a generation stop ID')
+    data = read(root/'pairs.json')[:32]
+    if not data:
+        raise ValueError('No valid examples available for the terminal-token audit')
+    examples = []
+    for row in data:
+        tokens = row['chosen_tokens']
+        labels = tokens['labels']
+        stops = [i for i, label in enumerate(labels) if label in eos]
+        if not stops or labels[-1] != tok.eos_token_id:
+            raise ValueError('Completion does not supervise a generation stop token')
+        examples.append({'id':row['id'], 'tail_ids':tokens['input_ids'][-12:],
+                         'tail_tokens':tok.convert_ids_to_tokens(tokens['input_ids'][-12:]),
+                         'tokens_after_first_stop':len(labels)-stops[0]-1})
+    model = load_train_model(ctx)
+    model.eval()
+    batch = collate([data[0]['chosen_tokens']], tok.pad_token_id, 'cuda')
+    labels = batch.pop('labels')
+    with torch.no_grad(), torch.autocast('cuda', dtype=getattr(torch,cfg['dtype'])):
+        out = model(**batch).logits
+        stop_index = next(i for i,x in enumerate(labels[0].tolist()) if x in eos)
+        logits_before = out[0,stop_index-1].float().clone()
+        stop_probability = logits_before.softmax(-1)[eos].sum().item()
+    dest = root/'training/rft/final'
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if not check_model(dest):
+        save_model(model, tok, dest)
+    # Loading the saved adapter on the same quantized base must preserve logits.
+    model.load_adapter(dest, adapter_name='roundtrip', is_trainable=False)
+    model.set_adapter('roundtrip')
+    model.eval()
+    with torch.no_grad(), torch.autocast('cuda', dtype=getattr(torch,cfg['dtype'])):
+        after = model(**batch).logits[0,stop_index-1].float()
+    maximum = (after-logits_before).abs().max().item()
+    if not torch.allclose(after, logits_before, atol=1e-3, rtol=1e-3):
+        raise ValueError('Adapter save/reload changed logits: '+str(maximum))
+    write(root/'audit.json', {'eos_ids':eos, 'tokenizer_eos':tok.eos_token_id,
+        'examples':examples, 'roundtrip_max_abs_logit_difference':maximum,
+        'teacher_forced_stop_probability_first_example':stop_probability,
+        'terminal_policy':'legacy template preserved; trailing tokens explicitly reported'})
 
 
 def report(ctx):
@@ -394,10 +490,10 @@ def report(ctx):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('phase', choices=['merge','generate','pairs','reference','bench','train','report','preflight'])
+    parser.add_argument('phase', choices=['merge','generate','pairs','reference','bench','train','report','preflight','audit'])
     parser.add_argument('--context', type=Path, required=True)
     parser.add_argument('--candidate', default='b0', choices=['b0','rft','dpo'])
-    parser.add_argument('--purpose', default='eval', choices=['train','eval'])
+    parser.add_argument('--purpose', default='eval', choices=['train','eval','final'])
     parser.add_argument('--count', type=int, default=128)
     args = parser.parse_args()
     ctx = read(args.context)
@@ -409,6 +505,7 @@ def main():
     elif args.phase == 'reference': reference(ctx)
     elif args.phase in ('train','bench'): train(ctx, args.candidate, args.phase=='bench')
     elif args.phase == 'report': report(ctx)
+    elif args.phase == 'audit': audit(ctx)
     else:
         import torch
         if not torch.cuda.is_available(): raise RuntimeError('CUDA is required')
