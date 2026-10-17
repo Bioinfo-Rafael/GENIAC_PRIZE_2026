@@ -65,6 +65,7 @@ devで+2ポイント、反復/非stopの悪化が各+3ポイント以内、GSM�
 - `audit/`：終端ラベル・保存再読込・無更新生成の比較。
 - `trials/<候補>/training/{rft,dpo}/final/`：候補アダプター。DFTはrft、DPO+NLLはdpoの下。
 - `trials/<候補>/training/{rft,dpo}/train.jsonl`：loss、gradient norm、log probabilityやpreference margin。
+- `trials/<候補>/training/{rft,dpo}/overflow.jsonl`：FP16勾配オーバーフローの再試行記録。重み・scheduler・更新回数を進めずloss scaleを半減し、同じバッチを再計算する。8回連続しても回復しない場合はcheckpointを保存して候補を停止する。
 - `pools/`：生成文と自動選別結果。答案本文は編集しない。
 
 候補の比較用統合モデルはdev評価後に削除してディスクを節約する。アダプター・checkpoint・生成結果を保持し、最終候補だけfinal前に再統合する。b0・Stage 1の元runのモデルは削除しない。`recommended_adapter`は共通Stage 1に適用するStage 2アダプターであり、run03と重ねて適用しない。

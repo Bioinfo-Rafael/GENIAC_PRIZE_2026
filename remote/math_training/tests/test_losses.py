@@ -3,7 +3,7 @@ from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import torch
 import torch.nn.functional as F
-from losses import sequence_logps,dpo_loss,collate,preference_objective
+from losses import sequence_logps,dpo_loss,collate,preference_objective,scaled_optimizer_step
 
 
 def test_shift_mask_chunk_value_and_gradient():
@@ -59,6 +59,21 @@ def test_dpo_nll_increases_chosen_gradient_and_accumulates_exactly():
     plain_gradient=torch.autograd.grad(preference_objective(c,r,rc,rr,.1,2,10),c)[0]
     assert torch.all(hybrid_gradient < plain_gradient)
     torch.testing.assert_close(torch.autograd.grad(parts,c)[0],hybrid_gradient)
+
+
+def test_amp_overflow_retries_without_changing_parameters_or_optimizer_state():
+    p=torch.nn.Parameter(torch.tensor([1.]))
+    optimizer=torch.optim.AdamW([p],lr=.01)
+    scaler=torch.amp.GradScaler('cpu',init_scale=16.)
+    scaler.scale(p.sum()).backward()
+    p.grad.fill_(float('inf'))
+    updated,_=scaled_optimizer_step(optimizer,scaler,[p])
+    assert not updated and p.item()==1. and not optimizer.state
+    assert scaler.get_scale()==8. and p.grad is None
+    scaler.scale(p.sum()).backward()
+    updated,norm=scaled_optimizer_step(optimizer,scaler,[p])
+    assert updated and torch.isfinite(norm) and p.item()<1.
+    assert optimizer.state[p]['step'].item()==1
 
 
 def test_padding_and_accumulation_invariance():

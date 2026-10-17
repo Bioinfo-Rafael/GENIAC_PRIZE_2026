@@ -44,3 +44,18 @@ def preference_objective(chosen, rejected, ref_chosen, ref_rejected, beta,
                          group_size, chosen_token_total, nll_weight=0.):
     return (dpo_loss(chosen,rejected,ref_chosen,ref_rejected,beta).sum()/group_size
             - nll_weight*chosen.sum()/chosen_token_total)
+
+
+def scaled_optimizer_step(optimizer, scaler, parameters):
+    """Reject nonfinite gradients and reduce the FP16 scale without updating weights."""
+    scaler.unscale_(optimizer)
+    norm = torch.nn.utils.clip_grad_norm_(parameters, 1.)
+    if not torch.isfinite(norm):
+        if not scaler.is_enabled():
+            raise FloatingPointError('Nonfinite gradient without an enabled loss scaler')
+        scaler.update(new_scale=scaler.get_scale()/2)
+        optimizer.zero_grad(set_to_none=True)
+        return False, norm
+    scaler.step(optimizer)
+    scaler.update()
+    return True, norm

@@ -253,7 +253,7 @@ def reference(ctx):
 
 def train(ctx, branch, benchmark=False):
     import torch
-    from losses import preference_objective
+    from losses import preference_objective, scaled_optimizer_step
     from transformers import get_cosine_schedule_with_warmup
     root, cfg = Path(ctx['run']), ctx['config']
     dest = root / 'training' / branch
@@ -326,7 +326,9 @@ def train(ctx, branch, benchmark=False):
             if old.is_dir() and not old.name.endswith('.partial'):
                 shutil.rmtree(old)
 
-    for group in groups[step:]:
+    overflow_retries = 0
+    while step < len(groups):
+        group = groups[step]
         if STOP:
             if not benchmark:
                 checkpoint_save()
@@ -364,12 +366,23 @@ def train(ctx, branch, benchmark=False):
                 raise FloatingPointError('Nonfinite training loss')
             scaler.scale(loss).backward()
             loss_value += loss.detach().item()
-        scaler.unscale_(optimizer)
-        norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.)
-        if not torch.isfinite(norm):
-            raise FloatingPointError('Nonfinite gradient; aborting without advancing scheduler')
-        scaler.step(optimizer)
-        scaler.update()
+        previous_scale = scaler.get_scale()
+        updated, norm = scaled_optimizer_step(optimizer, scaler, model.parameters())
+        if not updated:
+            overflow_retries += 1
+            import json
+            event = {'step_to_retry':step+1, 'retry':overflow_retries,
+                     'scale_before':previous_scale,'scale_after':scaler.get_scale(),
+                     'benchmark':benchmark}
+            with (dest/'overflow.jsonl').open('a') as f:
+                f.write(json.dumps(event)+'\n')
+            print(f'{branch} AMP_OVERFLOW retry step={step+1} scale={previous_scale}->{scaler.get_scale()}',flush=True)
+            if overflow_retries >= 8:
+                if not benchmark:
+                    checkpoint_save()
+                raise FloatingPointError('Nonfinite gradients persist after 8 loss-scale reductions; checkpoint retained')
+            continue
+        overflow_retries = 0
         scheduler.step()
         step += 1
         torch.cuda.synchronize()
