@@ -229,7 +229,7 @@ class Suite:
         data = self.dataset(pool,'mixed')
         if self.source and read(data/'pairs.json') != read(self.source/'pairs.json'):
             raise ValueError('Control pairs differ from the completed pilot')
-        # Saving and remerging the unchanged adapter must preserve first-32 greedy outputs.
+        # Require exact weights/configs; measure, rather than assume, generation reproducibility.
         audit_root = self.root/'audit'
         audit_ctx = self.context(audit_root,self.cfg)
         self.share_models(audit_root)
@@ -238,13 +238,25 @@ class Suite:
         if not (audit_root/'comparison.json').exists():
             self.phase(audit_ctx,'audit')
             self.phase(audit_ctx,'merge',branch='rft')
+            self.phase(audit_ctx,'audit_weights')
             self.phase(audit_ctx,'generate',branch='rft',count=32)
             generated = read(audit_root/'generations/rft_eval.json')
             differences = [r['id'] for r in self.dev[:32]
                 if generated[r['id']][0]['token_ids'] != self.base_outputs[r['id']][0]['token_ids']]
-            write(audit_root/'comparison.json',{'n':32,'changed_outputs':differences})
-        if read(audit_root/'comparison.json')['changed_outputs']:
-            raise ValueError('No-update adapter roundtrip changes generation; inspect audit artifacts')
+            changed_grades = [r['id'] for r in self.dev[:32]
+                if generated[r['id']][0]['grade']['correct'] != self.base_outputs[r['id']][0]['grade']['correct']]
+            write(audit_root/'comparison.json',{'n':32,'changed_outputs':differences,
+                'changed_correctness':changed_grades,'interpretation':
+                'Identical weights/configs; differing outputs indicate execution variability, not training updates.'})
+        if not read(audit_root/'integrity.json')['identical']:
+            raise ValueError('No-update model integrity check failed')
+        variability = read(audit_root/'comparison.json')
+        self.summary['inference_variability'] = variability
+        if variability['changed_outputs']:
+            print('AUDIT: identical weights/configs; generation variability:',
+                  len(variability['changed_outputs']),'/32; continuing with variability recorded.',flush=True)
+            self.summary['uncertainty_scope'] = (
+                'Paired bootstrap resamples questions, not inference executions; small gains are not conclusive.')
         self.remove_merged(audit_root,'rft')
         self.summary['audit'] = read(audit_root/'audit.json')
         self.save()

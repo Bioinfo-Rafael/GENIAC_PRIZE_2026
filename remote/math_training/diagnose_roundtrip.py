@@ -50,11 +50,30 @@ def compare_tensors(left_dir, right_dir):
 
 
 def json_diff(left, right):
+    if not left.exists() and not right.exists():
+        return {}
     if not left.exists() or not right.exists():
         return {'left_exists':left.exists(),'right_exists':right.exists()}
     a, b = json.loads(left.read_text()), json.loads(right.read_text())
     return {key:{'before':a.get(key),'after':b.get(key)}
             for key in sorted(a.keys()|b.keys()) if a.get(key)!=b.get(key)}
+
+
+def verify_model_equivalence(baseline, audit):
+    from core import sha
+    weights = compare_tensors(baseline,audit)
+    configs = {name:json_diff(Path(baseline)/name,Path(audit)/name) for name in
+               ('config.json','generation_config.json','tokenizer_config.json','special_tokens_map.json')}
+    tokenizer_equal = {}
+    for name in ('tokenizer.json','chat_template.jinja'):
+        left,right=Path(baseline)/name,Path(audit)/name
+        tokenizer_equal[name] = ((not left.exists() and not right.exists()) or
+            (left.exists() and right.exists() and sha(left)==sha(right)))
+    identical = not (weights['missing_on_right'] or weights['extra_on_right'] or
+                     weights['dtype_changes'] or weights['changed_tensor_count'] or
+                     any(configs.values()) or not all(tokenizer_equal.values()))
+    return {'identical':identical,'merged_weights':weights,'config_differences':configs,
+            'tokenizer_files_equal':tokenizer_equal}
 
 
 def main():

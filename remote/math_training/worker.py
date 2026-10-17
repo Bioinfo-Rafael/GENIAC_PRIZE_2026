@@ -490,7 +490,7 @@ def report(ctx):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('phase', choices=['merge','generate','pairs','reference','bench','train','report','preflight','audit'])
+    parser.add_argument('phase', choices=['merge','generate','pairs','reference','bench','train','report','preflight','audit','audit_weights'])
     parser.add_argument('--context', type=Path, required=True)
     parser.add_argument('--candidate', default='b0', choices=['b0','rft','dpo'])
     parser.add_argument('--purpose', default='eval', choices=['train','eval','final'])
@@ -506,6 +506,13 @@ def main():
     elif args.phase in ('train','bench'): train(ctx, args.candidate, args.phase=='bench')
     elif args.phase == 'report': report(ctx)
     elif args.phase == 'audit': audit(ctx)
+    elif args.phase == 'audit_weights':
+        from diagnose_roundtrip import verify_model_equivalence
+        root = Path(ctx['run'])
+        result = verify_model_equivalence(root/'models/b0',root/'models/rft')
+        write(root/'integrity.json',result)
+        if not result['identical']:
+            raise ValueError('No-update model weights or inference configuration differ; see audit/integrity.json')
     else:
         import torch
         if not torch.cuda.is_available(): raise RuntimeError('CUDA is required')

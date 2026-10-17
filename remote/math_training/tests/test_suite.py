@@ -46,7 +46,7 @@ def test_source_cache_checks(tmp_path,monkeypatch,mutation):
         with pytest.raises(ValueError):suite_utils.validate_source(source,cfg,hashes,packages,rows,dev)
 
 
-def setup_suite(tmp_path,monkeypatch,improve=True,fail=None):
+def setup_suite(tmp_path,monkeypatch,improve=True,fail=None,audit_variability=False):
     workspace=tmp_path/'work';inputs=workspace/'inputs';inputs.mkdir(parents=True)
     train=[{'problem':f'train {i}','dataset':'prm800k' if i<4500 else 'gsm8k','answer':'1'} for i in range(6000)]
     (inputs/'train.jsonl').write_text('\n'.join(json.dumps(r) for r in train))
@@ -85,6 +85,8 @@ def setup_suite(tmp_path,monkeypatch,improve=True,fail=None):
                 # Final is deliberately worse for the candidate: selection must remain frozen.
                 if purpose=='final' and branch!='b0':threshold=5
                 outputs={r['id']:[output(correct=j%10<threshold)] for j,r in enumerate(rows)}
+                if audit_variability and root.name=='audit':
+                    outputs[rows[0]['id']]=[output(correct=False)]
             write(root/f'generations/{branch}_{purpose}.json',outputs)
             write(root/f'timings/{branch}_{purpose}.json',[{'questions':count,'seconds':count*.01}])
         elif phase=='pairs':
@@ -95,6 +97,7 @@ def setup_suite(tmp_path,monkeypatch,improve=True,fail=None):
                 if 'rejected' in p:p['rejected_tokens']=p['chosen_tokens']
             write(root/'pairs.json',pairs);write(root/'pair_summary.json',dict(stats,pairs=len(pairs)))
         elif phase=='audit':write(root/'audit.json',{'ok':True})
+        elif phase=='audit_weights':write(root/'integrity.json',{'identical':True})
         elif phase=='reference':write(root/'reference.json',{'values':{}})
         elif phase=='bench':write(root/f'timings/bench_{branch}.json',{
             'microbatch':cfg['microbatch'],'seconds_per_update':1/cfg['microbatch'],
@@ -142,6 +145,16 @@ def test_budget_cutoff_stops_before_spawning_gpu_process(tmp_path,monkeypatch):
 
 
 REAL_COMMAND=suite.Suite.command
+
+
+def test_identical_model_with_generation_variability_continues_and_records_it(tmp_path,monkeypatch):
+    runner,calls,args=setup_suite(tmp_path,monkeypatch,improve=False,audit_variability=True)
+    runner.run()
+    report=read(runner.summary_path)
+    assert report['status']=='suite_complete_no_improvement'
+    assert len(report['inference_variability']['changed_outputs'])==1
+    assert len(report['inference_variability']['changed_correctness'])==1
+    assert 'inference executions' in report['uncertainty_scope']
 
 
 def test_timed_out_child_is_terminated_and_status_remains_recoverable(tmp_path,monkeypatch):
