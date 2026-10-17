@@ -46,6 +46,35 @@ def test_source_cache_checks(tmp_path,monkeypatch,mutation):
         with pytest.raises(ValueError):suite_utils.validate_source(source,cfg,hashes,packages,rows,dev)
 
 
+@pytest.mark.parametrize('mutation',['none','settings','missing','environment'])
+def test_recovery_pool_is_validated_before_reuse(tmp_path,monkeypatch,mutation):
+    source=tmp_path/'old';code=source/'code';code.mkdir(parents=True)
+    names=['worker.py','core.py','grading.py','chat_template.jinja','input_manifest.json']
+    for name in names:(code/name).write_text(name)
+    hashes={name:sha(code/name) for name in names}
+    monkeypatch.setattr(suite_utils,'RECOVERABLE_WORKER',hashes['worker.py'])
+    cfg={k:1 for k in suite_utils.GENERATION_KEYS};cfg['generations']=4
+    write(source/'suite_context.json',{'config':cfg,'code':hashes})
+    packages={'train':{},'eval':{}}
+    for k,v in packages.items():write(source/f'packages_{k}.json',v)
+    rows=[{'id':str(i)} for i in range(2048)];dev=[{'id':'dev'}]
+    baseline={'dev':[output()]}
+    pool=source/'pools/2048'
+    write(pool/'context.json',{'config':cfg})
+    write(pool/'train_rows.json',rows);write(pool/'eval_rows.json',dev)
+    gen={r['id']:[output(i) for i in range(4)] for r in rows}
+    if mutation=='missing':del gen['0']
+    write(pool/'generations/b0_train.json',gen)
+    write(source/'shared/generations/b0_eval.json',baseline)
+    write(source/'audit/integrity.json',{'identical':True})
+    if mutation=='settings':write(pool/'context.json',{'config':dict(cfg,temperature=9)})
+    if mutation=='environment':packages['eval']={'vllm':'changed'}
+    if mutation=='none':
+        assert len(suite_utils.validate_recovery(source,cfg,hashes,packages,rows,dev,baseline))==2048
+    else:
+        with pytest.raises(ValueError):suite_utils.validate_recovery(source,cfg,hashes,packages,rows,dev,baseline)
+
+
 def setup_suite(tmp_path,monkeypatch,improve=True,fail=None,audit_variability=False):
     workspace=tmp_path/'work';inputs=workspace/'inputs';inputs.mkdir(parents=True)
     train=[{'problem':f'train {i}','dataset':'prm800k' if i<4500 else 'gsm8k','answer':'1'} for i in range(6000)]
@@ -184,3 +213,32 @@ def test_resume_rejects_code_change(tmp_path,monkeypatch):
     (suite.HERE/'worker.py').write_text('changed')
     with pytest.raises(ValueError,match='Immutable'):
         suite.Suite(args)
+
+
+def test_recovery_reuses_completed_trials_and_retrains_only_failed_trial(tmp_path,monkeypatch):
+    runner,calls,args=setup_suite(tmp_path,monkeypatch,improve=False,
+                                 fail='e4_dpo_train_dpo_eval_128')
+    runner.run()
+    source=runner.root
+    original_report=(source/'suite_report.json').read_bytes()
+    original_command=suite.Suite.command
+    def command(self,cmd,name):
+        # Remove the injected failure for the recovery run.
+        if name=='e4_dpo_train_dpo_eval_128':
+            ctx=read(cmd[cmd.index('--context')+1]);root=Path(ctx['run'])
+            dest=root/'training/dpo/final';dest.mkdir(parents=True,exist_ok=True)
+            (dest/'weights.safetensors').write_bytes(b'weights')
+            write(dest/'artifacts.json',{'weights.safetensors':sha(dest/'weights.safetensors')})
+            calls.append(name)
+            return 1
+        return original_command(self,cmd,name)
+    monkeypatch.setattr(suite.Suite,'command',command)
+    monkeypatch.setattr(suite,'validate_recovery',lambda *a:read(source/'pools/2048/generations/b0_train.json'))
+    args.run_id='recovery';args.source_suite=source
+    calls.clear()
+    recovered=suite.Suite(args);recovered.run()
+    assert 'e4_dpo_train_dpo_eval_128' in calls
+    assert 'e3_dft_positive_train_rft_eval_128' not in calls
+    assert all(t['status']=='complete' for t in recovered.summary['trials'].values())
+    assert recovered.summary['trials']['e3_dft_positive']['imported_from']
+    assert (source/'suite_report.json').read_bytes()==original_report

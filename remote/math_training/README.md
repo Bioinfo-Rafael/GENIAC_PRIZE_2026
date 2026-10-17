@@ -72,6 +72,26 @@ devで+2ポイント、反復/非stopの悪化が各+3ポイント以内、GSM�
 
 中断からの再開は同じコード・環境で上の起動コマンドに`--resume`を追加し、元のsuite名と同じ`--source-run`を指定する。手動再開は新しい最大480分枠となる。コード変更後の混在再開は拒否するので、保存snapshotの`code/launch.sh --suite`を使うか、新しいsuite名にする。再開時にもfinal前の選択は固定されたまま。
 
+### FP16エラーで失敗した候補だけを新しいsuiteで再実行
+
+`suite8h_20261017_143739`ではc1/c2/e1/e3が完了し、e2/e4/e5がFP16非有限勾配で停止した。`--source-suite`はこの修正前（bde69f9）のsuiteを検証し、生成済み2048問と完了済み候補のアダプター・dev結果を再利用する。失敗した候補は修正済みのloss scalingでrun03から学習し直す。旧optimizerやコード署名を書き換えて接続する処理ではない。元suiteと元pilotを残して実行する。
+
+```bash
+cd ~/geniac-remote
+git pull --ff-only origin main
+GENIAC_SUITE_ID="retry8h_$(TZ=Asia/Tokyo date +%Y%m%d_%H%M%S)"
+nohup bash remote/math_training/launch.sh --suite \
+  --workspace "$HOME/geniac_math" --run-id "$GENIAC_SUITE_ID" \
+  --source-run "$HOME/geniac_math/runs/ada_20261016_221122" \
+  --source-suite "$HOME/geniac_math/suites/suite8h_20261017_143739" \
+  --budget-minutes 480 \
+  > "$HOME/geniac_math/$GENIAC_SUITE_ID.console.log" 2>&1 < /dev/null &
+echo "PID=$! SUITE=$GENIAC_SUITE_ID"
+tail -f "$HOME/geniac_math/$GENIAC_SUITE_ID.console.log"
+```
+
+完了済み条件はreportの`imported_from`、引継ぎ元とハッシュは`recovery_manifest.json`に記録する。修正版が改善する保証はなく、再試行上限でも非有限勾配が続く候補は失敗として残す。旧suiteのfinalではb0だけが評価済みで、候補のfinalを用いた再選択はしていない。
+
 ## 初回の取得
 
 Python 3.10〜3.12（推奨3.11）、Linux、NVIDIA GPU約48GB、環境構築後60GiB以上の空き容量が必要。起動スクリプトは対応するPythonを自動検出する。ホストにない場合は[uvの公式インストーラー](https://docs.astral.sh/uv/getting-started/installation/)を使い、作業領域内にPython 3.11を準備する。ホストのPython・既存venvは変更せず、`~/geniac_math`内に学習用とvLLM評価用のvenvを作る。ドライバ570向けにtorch2.8.0のcu128を指定する。

@@ -14,6 +14,43 @@ LEGACY_CODE = {
     'grading.py':'b0b37cb6114f78341fbb0459840ab5088566e432cbab2c1166c6ea2a2f640d14',
     'chat_template.jinja':'64f85b198065d0fba2a81f37e10ed68161ce2c19a754c7100e67e0ca2ee9c326',
 }
+RECOVERABLE_WORKER = 'a81baf59124a56420fa5fee1167180fdd7c708786ca0e41ca98890bd3b93b5cb'
+
+
+def validate_recovery(source, config, current_code, packages, rows, dev, baseline):
+    """Import only the known pre-AMP-fix suite; never import training optimizer state."""
+    source = Path(source)
+    ctx = read(source/'suite_context.json')
+    if sha(source/'code/worker.py') != RECOVERABLE_WORKER:
+        raise ValueError('Unsupported recovery suite version')
+    for name, expected in ctx['code'].items():
+        if sha(source/'code'/name) != expected:
+            raise ValueError('Recovery snapshot changed: '+name)
+    for name in ('core.py','grading.py','chat_template.jinja','input_manifest.json'):
+        if ctx['code'][name] != current_code[name]:
+            raise ValueError('Recovery data preparation differs: '+name)
+    if ctx['config'] != config:
+        raise ValueError('Recovery suite config differs')
+    for label in ('train','eval'):
+        if read(source/f'packages_{label}.json') != packages[label]:
+            raise ValueError('Recovery environment differs: '+label)
+    pool = source/'pools/2048'
+    pool_cfg = read(pool/'context.json')['config']
+    if any(pool_cfg.get(k)!=config.get(k) for k in GENERATION_KEYS):
+        raise ValueError('Recovery pool generation settings differ')
+    if read(pool/'train_rows.json') != rows[:2048] or read(pool/'eval_rows.json') != dev:
+        raise ValueError('Recovery question order/content differs')
+    if read(source/'shared/generations/b0_eval.json') != baseline:
+        raise ValueError('Recovery baseline differs')
+    generation = read(pool/'generations/b0_train.json')
+    if set(generation) != {r['id'] for r in rows[:2048]}:
+        raise ValueError('Recovery generation pool incomplete')
+    if any(len(v)!=config['generations'] or len({o['index'] for o in v})!=config['generations']
+           for v in generation.values()):
+        raise ValueError('Recovery generation count differs')
+    if not read(source/'audit/integrity.json')['identical']:
+        raise ValueError('Recovery model integrity failed')
+    return generation
 
 
 def validate_source(source, config, current_code, packages, rows, dev):

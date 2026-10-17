@@ -13,7 +13,7 @@ from pathlib import Path
 
 from core import digest, jsonl, prepare, read, sha, write
 from suite_utils import (candidate_report, eligible, immutable_json, select_best,
-                         summarize, validate_source)
+                         summarize, validate_source, validate_recovery)
 
 HERE = Path(__file__).resolve().parent
 EXPERIMENTS = [
@@ -62,13 +62,17 @@ class Suite:
             if p.is_file() and '__pycache__' not in p.parts and '.pytest_cache' not in p.parts
             and p.suffix in ('.py','.json','.txt','.jinja','.sh')}
         self.source = args.source_run.expanduser().resolve() if args.source_run else None
+        recovery = getattr(args,'source_suite',None)
+        self.recovery = recovery.expanduser().resolve() if recovery else None
         self.signature = digest({'code':self.code, 'config':self.cfg,
-                                 'source':str(self.source) if self.source else None})
+                                 'source':str(self.source) if self.source else None,
+                                 'source_suite':str(self.recovery) if self.recovery else None})
         if self.root.exists() and not args.resume:
             raise ValueError('Suite directory exists; use --resume or a new --run-id')
         self.root.mkdir(parents=True, exist_ok=True)
         immutable_json(self.root/'suite_context.json', {'signature':self.signature,
-            'code':self.code, 'config':self.cfg, 'source':str(self.source) if self.source else None})
+            'code':self.code, 'config':self.cfg, 'source':str(self.source) if self.source else None,
+            'source_suite':str(self.recovery) if self.recovery else None})
         self.snapshot = self.root/'code'
         if not self.snapshot.exists():
             shutil.copytree(HERE,self.snapshot,ignore=shutil.ignore_patterns('__pycache__','.pytest_cache'))
@@ -259,7 +263,57 @@ class Suite:
                 'Paired bootstrap resamples questions, not inference executions; small gains are not conclusive.')
         self.remove_merged(audit_root,'rft')
         self.summary['audit'] = read(audit_root/'audit.json')
+        if self.recovery:
+            self.import_recovery(packages)
         self.save()
+
+    def import_recovery(self, packages):
+        from worker import check_model
+        generation = validate_recovery(self.recovery,self.cfg,self.code,packages,
+                                       self.rows,self.dev,self.base_outputs)
+        pool = self.root/'pools/2048'
+        cache = pool/'generations/b0_train.json'
+        immutable_json(cache,generation)
+        old = read(self.recovery/'suite_report.json')
+        provenance = {'source':str(self.recovery),
+            'pool_sha256':sha(self.recovery/'pools/2048/generations/b0_train.json'),
+            'report_sha256':sha(self.recovery/'suite_report.json'),
+            'completed':{},'failed_trial_policy':'restart from run03 using cached generation; no optimizer import'}
+        for name,objective,mode,lr,count in EXPERIMENTS:
+            item = old['trials'].get(name,{})
+            if item.get('status')!='complete':
+                continue
+            previous = self.recovery/'trials'/name
+            cfg = read(previous/'context.json')['config']
+            expected_cfg = dict(self.cfg,objective=objective,data_mode=mode,learning_rate=lr,
+                                prompts=count,train_seed=42,nll_weight=.1,microbatch=item['microbatch'])
+            if cfg != expected_cfg:
+                raise ValueError('Recovery completed trial config differs: '+name)
+            branch = item['branch']
+            adapter = previous/f'training/{branch}/final'
+            if not check_model(adapter):
+                raise ValueError('Recovery completed adapter missing: '+name)
+            output = read(previous/f'generations/{branch}_eval.json')
+            report = candidate_report(self.base_outputs,output,self.dev)
+            if report['metrics']!=item['metrics']:
+                raise ValueError('Recovery metrics disagree with raw outputs: '+name)
+            provenance['completed'][name] = {
+                'output_sha256':sha(previous/f'generations/{branch}_eval.json'),
+                'adapter_manifest_sha256':sha(adapter/'artifacts.json')}
+            if name in self.summary['trials']:
+                continue
+            root = self.root/'trials'/name
+            self.context(root,cfg)
+            self.share_models(root)
+            immutable_json(root/'eval_rows.json',self.dev)
+            immutable_json(root/'final_rows.json',self.final)
+            immutable_json(root/f'generations/{branch}_eval.json',output)
+            link_dir(adapter,root/f'training/{branch}/final')
+            self.summary['trials'][name] = dict(item,**report,path=str(root),imported_from=str(previous))
+        immutable_json(self.root/'recovery_manifest.json',provenance)
+        self.summary['recovery'] = provenance
+        print('RECOVERY: reused 2048-question generation and completed trials:',
+              ', '.join(provenance['completed']),flush=True)
 
     def remove_merged(self, root, branch):
         path = Path(root)/'models'/branch
@@ -439,6 +493,7 @@ def main():
     parser.add_argument('--workspace',type=Path,required=True)
     parser.add_argument('--run-id',required=True)
     parser.add_argument('--source-run',type=Path)
+    parser.add_argument('--source-suite',type=Path,help='Reuse the pre-AMP-fix suite pool and completed trials')
     parser.add_argument('--budget-minutes',type=int,default=480)
     parser.add_argument('--started-at',type=float,default=None)
     parser.add_argument('--train-python',default=sys.executable)
