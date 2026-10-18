@@ -1,0 +1,19 @@
+{
+  "gsm8k": {
+    "repo_id": "openai/gsm8k",
+    "revision": "740312add88f781978c0658806c59bc2815b9866",
+    "filename": "main/train-00000-of-00001.parquet",
+    "sha256": "ea82612ea9582142387730c793eb67d3b12849002bc0b7fa6f8efafa7351419d",
+    "problem_field": "question",
+    "solution_field": "answer"
+  },
+  "limo": {
+    "repo_id": "GAIR/LIMO",
+    "revision": "b60f4462da9d927930b9c9bd43399cf875564416",
+    "filename": "limo.jsonl",
+    "sha256": "5e2fc6b67a50391b61718c8a972d75ea4232f9eba396d3d4e3b9f88502ec7739",
+    "problem_field": "question",
+    "solution_field": "solution",
+    "answer_field": "answer"
+  }
+}

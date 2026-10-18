@@ -1,0 +1,2 @@
+# Separate marker: do not reinstall the existing CUDA environments for this suite.
+pyarrow==21.0.0

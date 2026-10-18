@@ -9,7 +9,12 @@ TASK_ENTRY=run.py
 TASK_ARGS=()
 for task_arg in "$@"; do
   if [[ "$task_arg" == --suite ]]; then
+    [[ "$TASK_ENTRY" == run.py ]] || { echo 'Choose one suite mode'; exit 2; }
     TASK_ENTRY=suite.py
+    TASK_BUDGET=480
+  elif [[ "$task_arg" == --published-suite ]]; then
+    [[ "$TASK_ENTRY" == run.py ]] || { echo 'Choose one suite mode'; exit 2; }
+    TASK_ENTRY=published_suite.py
     TASK_BUDGET=480
   else
     TASK_ARGS+=("$task_arg")
@@ -62,6 +67,16 @@ install_env() {
 }
 install_env "$TASK_TRAIN_ENV" "$TASK_CODE_DIR/requirements-train.txt"
 install_env "$TASK_EVAL_ENV" "$TASK_CODE_DIR/requirements-eval.txt"
+if [[ "$TASK_ENTRY" == published_suite.py ]]; then
+  TASK_EXTRA_HASH="$(sha256sum "$TASK_CODE_DIR/requirements-published.txt" | cut -d ' ' -f 1)"
+  if [[ ! -f "$TASK_TRAIN_ENV/.published.sha256" ]] || [[ "$(cat "$TASK_TRAIN_ENV/.published.sha256")" != "$TASK_EXTRA_HASH" ]]; then
+    TASK_REMAINING=$((TASK_BUDGET * 60 - $(date +%s) + TASK_STARTED_AT - 60))
+    (( TASK_REMAINING > 0 )) || exit 75
+    timeout "$TASK_REMAINING" "$TASK_TRAIN_ENV/bin/python" -m pip install -r "$TASK_CODE_DIR/requirements-published.txt"
+    "$TASK_TRAIN_ENV/bin/python" -m pip check
+    printf '%s\n' "$TASK_EXTRA_HASH" > "$TASK_TRAIN_ENV/.published.sha256"
+  fi
+fi
 exec "$TASK_TRAIN_ENV/bin/python" -u "$TASK_CODE_DIR/$TASK_ENTRY" \
   --workspace "$TASK_WORKSPACE" --eval-python "$TASK_EVAL_ENV/bin/python" \
   --started-at "$TASK_STARTED_AT" "${TASK_ARGS[@]}"

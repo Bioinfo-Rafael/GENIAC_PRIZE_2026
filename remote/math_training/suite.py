@@ -58,6 +58,7 @@ class Suite:
         self.active = None
         self.cfg = read(HERE/'configs/ada_dpo.json')
         self.cfg.update(epochs=1, save_milestones=True, suite_benchmark=True)
+        self.cfg.update(getattr(args, 'config_overrides', {}))
         self.code = {str(p.relative_to(HERE)):sha(p) for p in sorted(HERE.rglob('*'))
             if p.is_file() and '__pycache__' not in p.parts and '.pytest_cache' not in p.parts
             and p.suffix in ('.py','.json','.txt','.jinja','.sh')}

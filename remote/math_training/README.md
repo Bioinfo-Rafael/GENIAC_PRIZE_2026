@@ -1,4 +1,79 @@
-# RTX 6000 Ada：自動正誤ペアによるRFT / DPO比較
+# RTX 6000 Ada：数学の追加学習と比較実験
+
+## 最新：公開解説GSM8K / LIMOの比較（2026-10-18）
+
+今回の起動は **`--published-suite`**。下に残した `--suite` は過去の自己生成実験。
+run03から独立して、A: GSM8K＋NLL、B: GSM8K＋DFT、C: GSM8K/LIMO＋NLL、D: 同じ混合＋DFTを比較する。時間不足時の優先順はA→C→B→D。PRMの指定ファイル対応が未確認のため、計画のGSM8K対照分岐を採用した。
+
+```bash
+cd ~/geniac-remote
+git pull --ff-only origin main
+mkdir -p "$HOME/geniac_math"
+GENIAC_SUITE_ID="public8h_$(TZ=Asia/Tokyo date +%Y%m%d_%H%M%S)"
+nohup bash remote/math_training/launch.sh --published-suite \
+  --workspace "$HOME/geniac_math" \
+  --run-id "$GENIAC_SUITE_ID" \
+  --source-run "$HOME/geniac_math/runs/ada_20261016_221122" \
+  --budget-minutes 480 \
+  > "$HOME/geniac_math/$GENIAC_SUITE_ID.console.log" 2>&1 < /dev/null &
+GENIAC_PID=$!
+printf 'PID=%s SUITE=%s\n' "$GENIAC_PID" "$GENIAC_SUITE_ID"
+printf '%s\n' "$GENIAC_SUITE_ID" > "$HOME/geniac_math/last_public_suite.txt"
+```
+
+既存のPython環境・run03入力・検証済み統合モデルを再利用する。追加依存は`pyarrow==21.0.0`だけ。bootstrapが対応Pythonを選ぶため、condaのPythonバージョンを手で変える必要はない。以前の生成答案・失敗候補は教材に使わない。新条件でb0も再評価する。元pilotの重みを参照するので、元runを移動・削除しない。
+
+同じworkspaceへの二重起動はlockで拒否する。`Another launch is active`なら、そのジョブは開始されていない。lockファイルの削除や再起動を繰り返さず、先行ログを確認する。
+
+```bash
+# 別のシェルでも使える進捗確認
+GENIAC_SUITE_ID=$(cat "$HOME/geniac_math/last_public_suite.txt")
+tail -f "$HOME/geniac_math/$GENIAC_SUITE_ID.console.log"
+# Ctrl+Cでtailだけを閉じた後
+cat "$HOME/geniac_math/suites/$GENIAC_SUITE_ID/suite_report.json"
+```
+
+`remote/math_training/`だけのsparse-checkoutのままで実行できる。教材は公式HFの固定revisionから取得し、コード内のSHA-256と照合する。GSM8Kは`openai/gsm8k`のmain/train、LIMOは`GAIR/LIMO`の`limo.jsonl`で、別repoへの自動置換はしない。
+
+ローカルの機械的計測では、LIMO817件の全文系列が2k以内35件、4k以内246件、8k以内576件、16k以内773件だった。使用したrun04保存tokenizerの本体・configのSHAは、run03入力manifestと一致した。これは重複除去・dev/test分割前であり、実際の学習候補数は起動時に集計する。本文を表示して内容で選別した値ではない。
+
+### 今回固定した条件
+
+- 解説は公開フィールドの全文。意味・品質による選別、解説の手直し、fix7・大会推論問題の参照、自己生成答案の学習は行わない。形式、重複、長さ、固定ハッシュだけで処理する。
+- 共通学習上限8,192。途中切断なし。回答本文をトークン化してEOSを一つ付加し、回答とEOSのみを監督する。本文に制御用特殊トークンがある例は機械的に除外し、数を報告する。
+- 最大100万教師トークン/条件、各例最大3回。混合は累積教師トークン量が約50:50になるよう構成。例単位で止めるため、実量・比率・更新境界での超過を記録する。A/BおよびC/Dは同じ学習順序。
+- BF16対応をGPUで確認して使用（未対応ならFP16＋GradScaler）。推論は全条件FP16、同じchunk8、生成上限2,048、greedy単一出力。旧成績を同条件の対照とせず、新b0と比較する。
+- 最長系列でmicrobatch 1/2/4を実測し、実効batch16を維持。全条件共通のトークン予算を、容量・実測時間から必要に応じ縮小する。モデル構造・LoRA・LR `5e-6`は共通。
+- トークン予算25/50/100%を最初に超える更新地点のアダプターを保存してdev400で評価。最良の通過候補だけseed43で独立再学習し、同じ割合の地点を評価。b0と候補の推論も再実行し、両方を通過してから採用候補を固定する。
+- devゲートは+2ポイント、反復/非stop各+3ポイント以内、GSM正解の損失4問以内。探索用devの反復利用・複数候補選択を明記。最終400問を見て候補を選び直さない。finalでも差の区間とゲートを確認し、改善未確認ならrun03を維持する。
+- LIMOは既知のrun03教材・dev/final・GSM trainとの重複を除去し、固定ハッシュ順で各5%のdev/testを先に確保。学習側の8k適合例が100未満ならC/Dはスキップする。補助testは候補固定後のみ評価。基盤モデル事前学習との重複までは検証していない。
+- 最大480分には準備・評価も含む。最終評価に60分、再現確認にその前の60分を確保する。時間切れ・失敗を記録し、8時間を使い切るためだけの追加学習はしない。
+
+### 保存先
+
+`~/geniac_math/suites/<public8h名>/`以下：
+
+| ファイル/ディレクトリ | 内容 |
+| --- | --- |
+| `suite_report.json` | 全成績、学習失敗、再現確認、推奨アダプター |
+| `published_data/data_report.json` | 長さ・重複・利用数の集計（答案本文なし） |
+| `published_data/sources.json` | 公式取得元・revision・SHA |
+| `budget_plan.json` | 実測時間と全条件共通トークン予算 |
+| `training_trials/<条件>/schedule.json` | 固定学習順序、教師トークン数・混合比、保存地点 |
+| `training_trials/<条件>/training/rft/` | 学習ログ、checkpoint、milestones、final。NLL/DFTとも既存workerの`rft`格納名を使用 |
+| `shared/generations/b0_eval.json` | 新b0の生回答 |
+| `evaluations/<条件>_<quarter/half/full>/generations/rft_eval.json` | 各候補の生回答 |
+| `evaluations/<候補>/limo_dev/` | LIMO補助devの回答 |
+| `selection.json` | final前に固定した候補 |
+| `code/`、`packages_*.json` | コードsnapshot・実際の環境 |
+
+`recommended_adapter`は共通Stage 1に適用するStage 2。run03アダプターと二重適用しない。提出JSONの作成・公式提出はこのジョブに含まない。
+
+同じコードでの中断再開は同じID・引数に`--resume`を追加する。コードを更新した後は、保存先の`code/launch.sh --published-suite`を使うか、新しいIDで開始する。手動再開は新しい時間枠となる。
+
+CPUでは既存44件と新規6件のテストを通過。新規テストはマスク/EOS、全文保持、混合・トークン予算・最大出現数、重複・分割、模擬GPUによる4条件→再現確認→候補固定→final、部分失敗と再開を検証した。**新しい8k学習のCUDA/vLLM通し実行・所要時間・成績は未確認。**
+
+## 過去：自己生成RFT / DPOの実装
 
 `remote/math_training/`だけで動くLinux用Python実装。共通Stage 1、run03 Stage 2、教材6,000件、固定dev/final分割は、ユーザー指定の共有Driveから必要な12ファイルだけ自動取得する。Gitに教材・重み・生成答案は置かない。ダウンロード内容は全ファイルSHA-256を検証し、run03重みは保存済み学習集計のハッシュとも照合済み。
 

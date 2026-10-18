@@ -96,6 +96,7 @@ def summarize(outputs, rows):
         tuple(words[i:i+10]) for i in range(max(0,len(words)-9))).values())
         for words in (v['text'].split() for v in values))
     return {'n':n, 'correct':sum(v['grade']['correct'] for v in values),
+        'correct_and_stop':sum(v['grade']['correct'] and v['finish_reason']=='stop' for v in values),
         'accuracy':sum(v['grade']['correct'] for v in values)/n,
         'repeated':repeated, 'repetition_rate':repeated/n,
         'non_stop':sum(v['finish_reason']!='stop' for v in values),

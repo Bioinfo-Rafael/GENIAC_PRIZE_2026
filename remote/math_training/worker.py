@@ -266,10 +266,20 @@ def train(ctx, branch, benchmark=False):
         raise ValueError('Unknown objective: ' + objective)
     preference = objective in ('dpo', 'dpo_nll')
     refs = read(root / 'reference.json')['values'] if preference else {}
-    training_signature = digest([ctx['signature'],sha(root/'pairs.json'),
-                                 sha(root/'reference.json') if preference else None])
+    plan = read(root/'schedule.json') if cfg.get('published_schedule') else None
+    signature_parts = [ctx['signature'],sha(root/'pairs.json'),
+                       sha(root/'reference.json') if preference else None]
+    if plan:
+        signature_parts.append(digest(plan))
+    training_signature = digest(signature_parts)
     train_seed = cfg.get('train_seed', cfg['seed'])
-    groups = update_groups(len(pairs), cfg['epochs'], cfg['effective_batch'], train_seed)
+    groups = plan['groups'] if plan else update_groups(len(pairs), cfg['epochs'], cfg['effective_batch'], train_seed)
+    if plan:
+        from published_data import schedule
+        expected = schedule(pairs,plan['target_tokens'],train_seed,cfg['effective_batch'],
+                            mixed=cfg['published_mixed'])
+        if plan != expected:
+            raise ValueError('Published training schedule changed')
     if not groups:
         raise ValueError('No training groups')
     total_updates = len(groups)
@@ -393,12 +403,14 @@ def train(ctx, branch, benchmark=False):
             f.write(json.dumps({'step':step, 'loss':loss_value, 'seconds':elapsed[-1],
                                 'max_vram':torch.cuda.max_memory_allocated(),
                                 'objective':objective, 'gradient_norm':norm.item(),
+                                'supervised_tokens':plan['cumulative_tokens'][step-1] if plan and not benchmark else None,
                                 'learning_rate':optimizer.param_groups[0]['lr'], **diagnostics})+'\n')
         if benchmark and step >= min(2, len(groups)):
             write(root / 'timings' / f'bench_{branch}.json', {'seconds_per_update': max(elapsed),
                         'updates':total_updates, 'microbatch':cfg['microbatch']})
             return
-        if cfg.get('save_milestones') and step in {max(1, len(groups)//2), len(groups)}:
+        milestone_steps = set(plan['milestone_steps'].values()) if plan else {max(1,len(groups)//2),len(groups)}
+        if cfg.get('save_milestones') and step in milestone_steps:
             milestone = dest / 'milestones' / f'step-{step:05d}'
             if not check_model(milestone):
                 milestone.parent.mkdir(parents=True, exist_ok=True)
@@ -408,7 +420,8 @@ def train(ctx, branch, benchmark=False):
     checkpoint_save()
     save_model(model, tok, dest / 'final')
     write(dest / 'complete.json', {'complete':True, 'updates':step, 'pairs':len(pairs),
-                                 'signature':training_signature})
+                                 'signature':training_signature,
+                                 'supervised_tokens':plan['actual_tokens'] if plan else None})
 
 
 def audit(ctx):
@@ -434,9 +447,14 @@ def audit(ctx):
         stops = [i for i, label in enumerate(labels) if label in eos]
         if not stops or labels[-1] != tok.eos_token_id:
             raise ValueError('Completion does not supervise a generation stop token')
-        examples.append({'id':row['id'], 'tail_ids':tokens['input_ids'][-12:],
-                         'tail_tokens':tok.convert_ids_to_tokens(tokens['input_ids'][-12:]),
-                         'tokens_after_first_stop':len(labels)-stops[0]-1})
+        if cfg.get('published_terminal'):
+            if len(stops) != 1 or stops[0] != len(labels)-1:
+                raise ValueError('Published completion must supervise exactly one terminal EOS')
+            examples.append({'id':row['id'],'tokens_after_first_stop':0,'supervised_eos_count':1})
+        else:
+            examples.append({'id':row['id'], 'tail_ids':tokens['input_ids'][-12:],
+                             'tail_tokens':tok.convert_ids_to_tokens(tokens['input_ids'][-12:]),
+                             'tokens_after_first_stop':len(labels)-stops[0]-1})
     model = load_train_model(ctx)
     model.eval()
     batch = collate([data[0]['chosen_tokens']], tok.pad_token_id, 'cuda')
@@ -462,7 +480,8 @@ def audit(ctx):
     write(root/'audit.json', {'eos_ids':eos, 'tokenizer_eos':tok.eos_token_id,
         'examples':examples, 'roundtrip_max_abs_logit_difference':maximum,
         'teacher_forced_stop_probability_first_example':stop_probability,
-        'terminal_policy':'legacy template preserved; trailing tokens explicitly reported'})
+        'terminal_policy':('raw published response + one EOS' if cfg.get('published_terminal') else
+                           'legacy template preserved; trailing tokens explicitly reported')})
 
 
 def report(ctx):
