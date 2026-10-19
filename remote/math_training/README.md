@@ -1,8 +1,82 @@
 # RTX 6000 Ada：数学の追加学習と比較実験
 
-## 最新：公開解説GSM8K / LIMOの比較（2026-10-18）
+## 最新：Cの終了改善と正答率を両立する16時間比較（2026-10-19）
 
-今回の起動は **`--published-suite`**。下に残した `--suite` は過去の自己生成実験。
+今回の起動は **`--c-suite`**。旧Cの25%・50%とrun03のアダプター補間6候補、回答形式×終了処理の4条件、公開GSM/LIMO＋NLLの2学習率（`5e-6` / `1e-6`）を順に比較する。各学習はrun03から独立開始する。上位1候補をseed43と再推論で確認してから、候補を固定し最終評価する。最大960分には環境準備・生成・評価も含む。早く比較が完了した場合は終了する。
+
+次をまとめて実行する。`remote/math_training/`だけのsparse-checkoutで動く。以前のpilotと公開解説suiteは、重み・Cの保存地点・固定学習順序の参照元として必要なので、そのまま残す。
+
+```bash
+(
+set -e
+cd ~/geniac-remote
+git pull --ff-only origin main
+test -f "$HOME/geniac_math/runs/ada_20261016_221122/context.json"
+test -f "$HOME/geniac_math/suites/public8h_20261018_165238/suite_context.json"
+mkdir -p "$HOME/geniac_math"
+GENIAC_SUITE_ID="c16h_$(TZ=Asia/Tokyo date +%Y%m%d_%H%M%S)"
+nohup bash remote/math_training/launch.sh --c-suite \
+  --workspace "$HOME/geniac_math" \
+  --run-id "$GENIAC_SUITE_ID" \
+  --source-run "$HOME/geniac_math/runs/ada_20261016_221122" \
+  --source-suite "$HOME/geniac_math/suites/public8h_20261018_165238" \
+  --budget-minutes 960 \
+  > "$HOME/geniac_math/$GENIAC_SUITE_ID.console.log" 2>&1 < /dev/null &
+GENIAC_PID=$!
+printf 'PID=%s SUITE=%s\n' "$GENIAC_PID" "$GENIAC_SUITE_ID"
+printf '%s\n' "$GENIAC_SUITE_ID" > "$HOME/geniac_math/last_c_suite.txt"
+)
+```
+
+condaの切替は不要。既存の専用venvを再利用し、bootstrapが対応Pythonを選ぶ。workspaceの二重起動はlockで拒否する。
+
+```bash
+GENIAC_SUITE_ID=$(cat "$HOME/geniac_math/last_c_suite.txt")
+tail -f "$HOME/geniac_math/$GENIAC_SUITE_ID.console.log"
+# Ctrl+Cでtailだけを閉じた後
+cat "$HOME/geniac_math/suites/$GENIAC_SUITE_ID/suite_report.json"
+```
+
+### 今回の比較・選択
+
+- `old_C_quarter/half`は保存済み重みを新b0と同条件で再評価。補間はLoRA A/Bパラメータのα=0.25/0.5/0.75で、rank8のまま一つのモデルへ統合して直接生成する。端点0/1のテンソル一致と、0の統合重みがb0に一致することを検査する。
+- F00=公開回答全文＋直接EOS、F10=GSMの計算注釈除去・最終値boxed化＋直接EOS、F01=公開回答全文＋旧chat終端、F11=GSM形式変換＋旧chat終端。LIMO解説は変更しない。4形式全てで8k以内に収まる共通例を使い、旧Cと同じ順序・更新グループで半分/全量を比較する。半分は128問の診断、全量は400問。形式変更にはdevゲート通過とF00比5問以上の正解増を要求する。
+- 本学習は同じ教材・教師トークン予算で2学習率を比較。最大100万教師トークン/条件、各例最大3回、GSM/LIMO教師トークン量約50:50。5万/10万/25万/50万/100万と最後の地点を保存し、2条件を地点ごとに交互に進める。計測・学習300分、dev評価90分。実測から縮小し、20万未満なら理由を記録してスキップする。ユニークLIMO100例以上に届いたかも報告する。
+- 最長系列でVRAMを検査し、実際の混合順序の6更新で時間を予測する。microbatch 1/2/4から実測で選ぶ。学習中OOMなら部分勾配を破棄しRNGを戻してmicrobatchを半分にし、同じ更新全体を再試行する。実効batchと教材を維持。BF16対応GPUではBF16学習、推論はFP16。
+- 第一目標はb0以上の正答率かつ反復・非stopを各半分以下。終了改善候補は正答率低下3ポイント以内、GSM損失8問以内、反復・非stop各半減、正解かつ通常終了5ポイント以上増、判定不能の増加3ポイント以内。この基準を実行前に固定し、その実行のb0から算出する。
+- 第一目標の候補を優先。上位1候補のseed43再学習とb0/候補の再推論が通過した後、候補を固定する。最終400問はb0・旧C半分・選択候補を評価し、候補の選び直しには使わない。再利用したdev/finalなので、未知のベンチマークに対する証明とは扱わない。bootstrapは問題の再抽出による区間で、推論の実行差や多重比較を含まない。
+- 自己生成答案・fix7・大会問題を学習・選択に使わない。公開教材は固定revision・SHAで取得し、形式・重複・長さ・hashだけで機械処理。教材本文をログへ表示しない。graderは変更しない。
+
+### 結果の場所
+
+`~/geniac_math/suites/<c16h名>/`以下：
+
+| 場所 | 内容 |
+| --- | --- |
+| `suite_report.json` | 全候補成績、再現確認、最終比較、推奨、失敗・未完了 |
+| `diagnosis.json` | 旧Cの実例数・教師トークン量・学習時間、抽出失敗等の集計 |
+| `prior_manifest.json` | 参照した旧C・データ・コードの同一性 |
+| `interpolations/<候補>/` | 補間アダプターと両端SHA |
+| `format_data/format_report.json` | 共通例数・長さで除外した件数・更新数 |
+| `format_choice.json` / `main_budget.json` | 本学習前に固定した形式と実測予算 |
+| `benchmarks/main/profile.json` | 最長系列メモリ検査と代表バッチ時間 |
+| `training_trials/<条件>/schedule.json` | 教材順序・混合比・実例数・保存地点 |
+| `training_trials/<条件>/training/rft/` | 学習ログ、milestones、再開checkpoint（NLLの格納名は`rft`） |
+| `shared/generations/b0_eval.json` | 新b0の生回答 |
+| `evaluations/<候補>/generations/rft_eval.json` | 各候補の生回答 |
+| `confirmation/` / `repeats/` | seed43・再推論の回答 |
+| `selection.json` | 最終評価より前に固定した候補 |
+| `shared/generations/b0_final.json` / `final_evaluations/` | 最終比較の生回答 |
+
+`suite_complete_termination_tradeoff`は終了挙動と正答率の許容幅を最終評価でも確認した状態であり、正答率の向上を意味しない。`suite_complete_no_confirmed_improvement`ではrun03を推奨する。`suite_partial_final_evaluation`、`time_limited`、`failed`の場合は未完了部分を確認する。途中の学習失敗は`incomplete_training`にも残る。提出JSON作成・公式提出は含まない。
+
+中断再開は同じID・引数に`--resume`を追加する。更新後は保存先の`code/launch.sh --c-suite`を使い、同じsnapshotを維持する。手動再開は新しい全体時間枠になるが、本学習の累積時間枠は維持する。選択が固定済みなら再学習・再選択しない。
+
+CPUで補間端点・形式変換・固定順序・選択基準・模擬GPUの全工程と部分失敗・再開、実際のautograd/Adam/schedulerによる中断再開・OOM再試行を検証。**CUDA/vLLM通し実行、実機所要時間、改善成績は未確認。**
+
+## 過去：公開解説GSM8K / LIMOの比較（2026-10-18）
+
+この過去比較の起動は **`--published-suite`**。下に残した `--suite` は過去の自己生成実験。
 run03から独立して、A: GSM8K＋NLL、B: GSM8K＋DFT、C: GSM8K/LIMO＋NLL、D: 同じ混合＋DFTを比較する。時間不足時の優先順はA→C→B→D。PRMの指定ファイル対応が未確認のため、計画のGSM8K対照分岐を採用した。
 
 ```bash

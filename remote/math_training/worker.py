@@ -251,7 +251,7 @@ def reference(ctx):
             write(dest, saved)
 
 
-def train(ctx, branch, benchmark=False):
+def train(ctx, branch, benchmark=False, until_step=None):
     import torch
     from losses import preference_objective, scaled_optimizer_step
     from transformers import get_cosine_schedule_with_warmup
@@ -275,21 +275,31 @@ def train(ctx, branch, benchmark=False):
     train_seed = cfg.get('train_seed', cfg['seed'])
     groups = plan['groups'] if plan else update_groups(len(pairs), cfg['epochs'], cfg['effective_batch'], train_seed)
     if plan:
-        from published_data import schedule
-        expected = schedule(pairs,plan['target_tokens'],train_seed,cfg['effective_batch'],
-                            mixed=cfg['published_mixed'])
-        if plan != expected:
-            raise ValueError('Published training schedule changed')
+        if plan.get('kind')=='c_plan_v1':
+            from c_utils import validate_plan
+            validate_plan(pairs,plan)
+            if plan['seed']!=train_seed:
+                raise ValueError('Schedule seed differs from training seed')
+        else:
+            from published_data import schedule
+            expected = schedule(pairs,plan['target_tokens'],train_seed,cfg['effective_batch'],
+                                mixed=cfg['published_mixed'])
+            if plan != expected:
+                raise ValueError('Published training schedule changed')
     if not groups:
         raise ValueError('No training groups')
     total_updates = len(groups)
-    if benchmark and cfg.get('suite_benchmark'):
+    benchmark_steps=cfg.get('benchmark_steps',2)
+    if benchmark and cfg.get('benchmark_mode')=='representative':
+        indices=sorted({round(i*(len(groups)-1)/max(1,benchmark_steps-1)) for i in range(benchmark_steps)})
+        groups=[groups[i] for i in indices]
+    elif benchmark and cfg.get('suite_benchmark'):
         # Probe the longest examples so a faster setting also fits later training batches.
         order = sorted(range(len(pairs)), key=lambda i:max(
             len(pairs[i][key]['input_ids']) for key in ('chosen_tokens','rejected_tokens')
             if key in pairs[i]), reverse=True)
         groups = [order[i:i+cfg['effective_batch']] for i in
-                  range(0,min(len(order),2*cfg['effective_batch']),cfg['effective_batch'])]
+                  range(0,min(len(order),benchmark_steps*cfg['effective_batch']),cfg['effective_batch'])]
     random.seed(train_seed)
     torch.manual_seed(train_seed)
     torch.cuda.manual_seed_all(train_seed)
@@ -302,6 +312,7 @@ def train(ctx, branch, benchmark=False):
     scheduler = get_cosine_schedule_with_warmup(optimizer, max(1, round(len(groups)*.05)), len(groups))
     scaler = torch.amp.GradScaler('cuda', enabled=cfg['dtype']=='float16')
     step = 0
+    runtime_microbatch=cfg['microbatch']
     if state_dir:
         state = torch.load(state_dir / 'state.pt', map_location='cpu', weights_only=False)
         if state['signature'] != training_signature:
@@ -313,6 +324,9 @@ def train(ctx, branch, benchmark=False):
         torch.cuda.set_rng_state_all(state['cuda_rng'])
         random.setstate(state['python_rng'])
         step = state['step']
+        runtime_microbatch=state.get('runtime_microbatch',runtime_microbatch)
+    if until_step is not None and step>=until_step and step<len(groups):
+        return
     dtype = getattr(torch, cfg['dtype'])
     model.train()
     elapsed = []
@@ -329,7 +343,7 @@ def train(ctx, branch, benchmark=False):
         torch.save({'step': step, 'signature': training_signature, 'optimizer': optimizer.state_dict(),
                     'scheduler': scheduler.state_dict(), 'scaler': scaler.state_dict(),
                     'torch_rng': torch.get_rng_state(), 'cuda_rng': torch.cuda.get_rng_state_all(),
-                    'python_rng': random.getstate()}, tmp / 'state.pt')
+                    'python_rng': random.getstate(), 'runtime_microbatch':runtime_microbatch}, tmp / 'state.pt')
         tmp.rename(checkpoint)
         write(state_path, {'checkpoint': checkpoint.name, 'step': step})
         for old in sorted(dest.glob('checkpoint-*'))[:-2]:
@@ -350,32 +364,51 @@ def train(ctx, branch, benchmark=False):
         diagnostics = {'chosen_score_per_token':0., 'rejected_logp_per_token':0.,
                        'chosen_reference_delta':0., 'rejected_reference_delta':0.,
                        'preference_margin':0., 'preference_accuracy':0.}
-        for offset in range(0, len(group), cfg['microbatch']):
-            sub = [pairs[i] for i in group[offset:offset+cfg['microbatch']]]
-            if not preference:
-                values, counts = logps(model, tok, [p['chosen_tokens'] for p in sub],
-                                       dtype, dft=objective=='dft')
-                loss = -values.sum() / token_total
-            else:
-                values, counts = logps(model, tok, [p['chosen_tokens'] for p in sub] +
-                                  [p['rejected_tokens'] for p in sub], dtype)
-                ref = torch.tensor([refs[p['id']] for p in sub], device='cuda')
-                loss = preference_objective(values[:len(sub)],values[len(sub):],ref[:,0],ref[:,1],
-                    cfg['beta'],len(group),token_total,
-                    cfg.get('nll_weight',.1) if objective=='dpo_nll' else 0.)
-                with torch.no_grad():
-                    dc, dr = values[:len(sub)]-ref[:,0], values[len(sub):]-ref[:,1]
-                    margin = cfg['beta']*(dc-dr)
-                    diagnostics['chosen_reference_delta'] += dc.sum().item()/len(group)
-                    diagnostics['rejected_reference_delta'] += dr.sum().item()/len(group)
-                    diagnostics['preference_margin'] += margin.sum().item()/len(group)
-                    diagnostics['preference_accuracy'] += (margin>0).sum().item()/len(group)
-                    diagnostics['rejected_logp_per_token'] += (values[len(sub):]/counts[len(sub):]).sum().item()/len(group)
-            diagnostics['chosen_score_per_token'] += (values[:len(sub)].detach()/counts[:len(sub)]).sum().item()/len(group)
-            if not torch.isfinite(loss):
-                raise FloatingPointError('Nonfinite training loss')
-            scaler.scale(loss).backward()
-            loss_value += loss.detach().item()
+        rng_before = (torch.get_rng_state(), torch.cuda.get_rng_state_all()) if cfg.get('auto_oom_microbatch') else None
+        try:
+            for offset in range(0, len(group), runtime_microbatch):
+                sub = [pairs[i] for i in group[offset:offset+runtime_microbatch]]
+                if not preference:
+                    values, counts = logps(model, tok, [p['chosen_tokens'] for p in sub],
+                                           dtype, dft=objective=='dft')
+                    loss = -values.sum() / token_total
+                else:
+                    values, counts = logps(model, tok, [p['chosen_tokens'] for p in sub] +
+                                      [p['rejected_tokens'] for p in sub], dtype)
+                    ref = torch.tensor([refs[p['id']] for p in sub], device='cuda')
+                    loss = preference_objective(values[:len(sub)],values[len(sub):],ref[:,0],ref[:,1],
+                        cfg['beta'],len(group),token_total,
+                        cfg.get('nll_weight',.1) if objective=='dpo_nll' else 0.)
+                    with torch.no_grad():
+                        dc, dr = values[:len(sub)]-ref[:,0], values[len(sub):]-ref[:,1]
+                        margin = cfg['beta']*(dc-dr)
+                        diagnostics['chosen_reference_delta'] += dc.sum().item()/len(group)
+                        diagnostics['rejected_reference_delta'] += dr.sum().item()/len(group)
+                        diagnostics['preference_margin'] += margin.sum().item()/len(group)
+                        diagnostics['preference_accuracy'] += (margin>0).sum().item()/len(group)
+                        diagnostics['rejected_logp_per_token'] += (values[len(sub):]/counts[len(sub):]).sum().item()/len(group)
+                diagnostics['chosen_score_per_token'] += (values[:len(sub)].detach()/counts[:len(sub)]).sum().item()/len(group)
+                if not torch.isfinite(loss):
+                    raise FloatingPointError('Nonfinite training loss')
+                scaler.scale(loss).backward()
+                loss_value += loss.detach().item()
+        except torch.cuda.OutOfMemoryError:
+            if benchmark or not cfg.get('auto_oom_microbatch') or runtime_microbatch<=1:
+                raise
+            optimizer.zero_grad(set_to_none=True)
+            import gc
+            # Backward may have accumulated partial gradients; redo the WHOLE update.
+            values = counts = loss = ref = None
+            gc.collect()
+            torch.cuda.empty_cache()
+            torch.set_rng_state(rng_before[0])
+            torch.cuda.set_rng_state_all(rng_before[1])
+            runtime_microbatch=max(1,runtime_microbatch//2)
+            print(f'OOM_RETRY step={step+1} microbatch={runtime_microbatch}',flush=True)
+            with (dest/'oom.jsonl').open('a') as f:
+                import json
+                f.write(json.dumps({'step_to_retry':step+1,'microbatch':runtime_microbatch})+'\n')
+            continue
         previous_scale = scaler.get_scale()
         updated, norm = scaled_optimizer_step(optimizer, scaler, model.parameters())
         if not updated:
@@ -401,22 +434,26 @@ def train(ctx, branch, benchmark=False):
         with (dest / ('benchmark.jsonl' if benchmark else 'train.jsonl')).open('a') as f:
             import json
             f.write(json.dumps({'step':step, 'loss':loss_value, 'seconds':elapsed[-1],
-                                'max_vram':torch.cuda.max_memory_allocated(),
+                                'max_vram':torch.cuda.max_memory_allocated(), 'microbatch':runtime_microbatch,
                                 'objective':objective, 'gradient_norm':norm.item(),
                                 'supervised_tokens':plan['cumulative_tokens'][step-1] if plan and not benchmark else None,
                                 'learning_rate':optimizer.param_groups[0]['lr'], **diagnostics})+'\n')
-        if benchmark and step >= min(2, len(groups)):
-            write(root / 'timings' / f'bench_{branch}.json', {'seconds_per_update': max(elapsed),
-                        'updates':total_updates, 'microbatch':cfg['microbatch']})
+        if benchmark and step >= min(benchmark_steps, len(groups)):
+            write(root / 'timings' / f'bench_{branch}.json', {'seconds_per_update': (sum(elapsed)/len(elapsed) if cfg.get('benchmark_mode')=='representative' else max(elapsed)),
+                        'sample_update_seconds':elapsed,'mode':cfg.get('benchmark_mode','longest'),
+                        'updates':total_updates, 'microbatch':runtime_microbatch})
             return
         milestone_steps = set(plan['milestone_steps'].values()) if plan else {max(1,len(groups)//2),len(groups)}
-        if cfg.get('save_milestones') and step in milestone_steps:
+        if not benchmark and cfg.get('save_milestones') and step in milestone_steps:
             milestone = dest / 'milestones' / f'step-{step:05d}'
             if not check_model(milestone):
                 milestone.parent.mkdir(parents=True, exist_ok=True)
                 save_model(model, tok, milestone)
-        if step % cfg['checkpoint_every'] == 0:
+        if not benchmark and step % cfg['checkpoint_every'] == 0:
             checkpoint_save()
+        if until_step is not None and step>=until_step and step<len(groups):
+            checkpoint_save()
+            return
     checkpoint_save()
     save_model(model, tok, dest / 'final')
     write(dest / 'complete.json', {'complete':True, 'updates':step, 'pairs':len(pairs),
@@ -527,6 +564,7 @@ def main():
     parser.add_argument('--candidate', default='b0', choices=['b0','rft','dpo'])
     parser.add_argument('--purpose', default='eval', choices=['train','eval','final'])
     parser.add_argument('--count', type=int, default=128)
+    parser.add_argument('--until-step',type=int)
     args = parser.parse_args()
     ctx = read(args.context)
     signal.signal(signal.SIGTERM, request_stop)
@@ -535,7 +573,7 @@ def main():
     elif args.phase == 'generate': generate(ctx, args.candidate, args.purpose, args.count)
     elif args.phase == 'pairs': token_pairs(ctx)
     elif args.phase == 'reference': reference(ctx)
-    elif args.phase in ('train','bench'): train(ctx, args.candidate, args.phase=='bench')
+    elif args.phase in ('train','bench'): train(ctx, args.candidate, args.phase=='bench',args.until_step)
     elif args.phase == 'report': report(ctx)
     elif args.phase == 'audit': audit(ctx)
     elif args.phase == 'audit_weights':

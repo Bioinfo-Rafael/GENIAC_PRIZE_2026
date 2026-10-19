@@ -31,7 +31,7 @@ class PublishedSuite(Suite):
         self.summary['uncertainty_scope'] = 'Repeated-use dev400 is exploratory. Bootstrap excludes execution variability.'
 
     def initialize(self):
-        self.cutoff = self.deadline-3600
+        self.cutoff = min(self.cutoff,self.deadline-3600)
         self.command([self.args.train_python,str(self.snapshot/'fetch_inputs.py'),
                       '--destination',str(self.inputs)],'fetch')
         for item in read(self.snapshot/'input_manifest.json')['files']:
