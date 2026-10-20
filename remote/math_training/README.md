@@ -1,5 +1,82 @@
 # RTX 6000 Ada：数学の追加学習と比較実験
 
+## 正解率優先suite・時間上限なし（2026-10-20）
+
+`--accuracy-suite`は、既存の時間制限付きsuiteと独立した新しい実験。学習・評価にwall-clock制限はない。インストールにのみ24時間のwatchdogがあり、初期値ではSFT最大400万教師トークン/枝、オンライン128ラウンド/枝で終了する。延々と改善するまで回す処理ではない。時間見積もりは未測定。
+
+### 実験内容
+
+| 条件 | 出発点 | 教材数 | 学習率 | 終了形式 |
+| --- | --- | ---: | ---: | --- |
+| 主比較1 | run03継続 | 6,000 | 1e-5 | F11 |
+| 主比較2 | 共通Stage 1＋新規rank8 Stage 2 | 6,000 | 1e-5 | F11 |
+| 主比較3 | run03継続 | 12,000 | 1e-5 | F11 |
+| 主比較4 | 共通Stage 1＋新規rank8 Stage 2 | 12,000 | 1e-5 | F11 |
+| 低学習率対照 | run03継続 | 6,000 | 5e-6 | F11 |
+| 終了形式対照 | run03継続 | 6,000 | 5e-6 | F10 |
+
+PRM:GSM=3:1、固定hash順で6,000問は12,000問の部分集合。回答のみのNLL、実効batch16、同じ教師トークン目標で比較する。丸ごとの例で停止するので実トークン数・更新数は多少異なり、両方を記録する。F10はF11と例・更新グループを完全一致させる別対照。F11はGSMの既存計算注記除去と構造化最終値のboxed化＋legacy終端、F10は同じ本文＋直接EOS。PRM解説は書き換えない。SFTのmicrobatchは1/2/4を最長系列・代表バッチで実測し、OOM時には更新全体を再試行する。
+
+1. **データ**：公式`openai/prm800k`のcommit `7ecc794703b2877f63226f2477a49b34f9b25163`、`prm800k/math_splits/train.jsonl`（SHA `90d96dae…`）と既存pinの公式GSMを使用。指定公式リポジトリ内の完成解説への対応を確認し、run03のPRM4,500/GSM1,500問すべての正規化問題hashが一致した。旧キャッシュの解答を教師として使い回さない。PRMの段階評価ラベルは今回未実装。
+2. **分割**：旧dev400は探索専用。旧run03訓練6,000問と旧dev/final800問を除外し、公開データからhash順で確認400問・最終400問を新設する。両方ともPRM300/GSM100。大会問題を読み込まない。既知の訓練重複は防ぐが、基盤モデルの事前学習重複まで保証するものではない。
+3. **量**：全SFT枝は1例最大3回。小さい側の3回分容量に共通トークン目標を下げる。実データCPU検査ではPRM10,798/GSM7,073件が利用可能、共通目標は **3,530,379教師トークン**。これは400万指定時の値。50k/100k/250k/500k/1m/最終地点を評価し、途中の良い候補も保持する。
+4. **診断**：旧dev先頭128問の8生成を集計。単一greedy正答率、sampled pass@1、8回答のうち一度でも正解した割合を分けて報告。診断問題を訓練へ移したり、結果から個別問題を選別したりしない。
+5. **オンライン**：run03と、dev正答率がrun03以上の最良SFT候補（あれば）の最大2枝。各ラウンド4問×8生成、同一モデルから生成→自動採点→1更新。問題順は固定seed、正誤に基づく問題の再選別なし。初期値128ラウンド＝各枝最大4,096回答。全正解/全不正解のグループは勾配ゼロなので、ラウンド数と実optimizer更新数を別記録する。
+6. **目的関数**：グループ内の平均・標準偏差で正規化した正誤報酬を使うon-policy REINFORCE。completionのtoken平均log確率×advantage、1 rollout batchに1更新、KLなし。固定DPOペアや複数epochのclipped GRPOではない。報酬は最終答えの正しさのみで、短さ・通常終了への加点なし。8回答を同時生成し、OOM時は4/2/1へ縮小。生成と勾配は同一QLoRA重み、temperature1/top_p1/top_k0、dropout無効。実際の生成IDを保存し、未生成EOSを補わない。
+7. **採用**：devで+2ポイント以上の最良1候補を凍結。新規確認400問でpaired bootstrap区間の下限>0なら候補を固定し、新規最終400問へ進む。最終でも下限>0のときだけ正解率改善を推奨。反復率は報告のみで半減条件はない。失敗枝は`partial_...`と明記する。提出スコアは自動取得・推測しない。
+
+### pullからバックグラウンド実行
+
+過去のsuiteを引数に渡す必要はない。共有`inputs`をSHA検証して再利用する。sparse-checkoutは`remote/math_training`が入っていれば足りる。
+
+```bash
+(
+set -e
+cd ~/geniac-remote
+git pull --ff-only origin main
+mkdir -p "$HOME/geniac_math"
+GENIAC_SUITE_ID="accuracy_$(TZ=Asia/Tokyo date +%Y%m%d_%H%M%S)"
+nohup bash remote/math_training/launch.sh --accuracy-suite \
+  --workspace "$HOME/geniac_math" \
+  --run-id "$GENIAC_SUITE_ID" \
+  > "$HOME/geniac_math/$GENIAC_SUITE_ID.console.log" 2>&1 < /dev/null &
+printf 'PID=%s\nSUITE=%s\nLOG=%s\n' "$!" "$GENIAC_SUITE_ID" \
+  "$HOME/geniac_math/$GENIAC_SUITE_ID.console.log"
+)
+```
+
+出力されたSUITE名を以下に入れて確認する。
+
+```bash
+GENIAC_SUITE_ID=accuracy_YYYYMMDD_HHMMSS
+tail -f "$HOME/geniac_math/$GENIAC_SUITE_ID.console.log"
+```
+
+コンソールはphase開始・評価結果、各phaseの詳細は`$HOME/geniac_math/suites/$GENIAC_SUITE_ID/logs/`。SFT各更新・オンライン各ラウンドの進捗はそこに出る。
+
+途中で止まった場合は、同じIDとオプションに`--resume`を付ける。将来のgit更新と混在しないよう、保存されたコードから起動する。
+
+```bash
+GENIAC_SUITE_ID=accuracy_YYYYMMDD_HHMMSS
+nohup bash "$HOME/geniac_math/suites/$GENIAC_SUITE_ID/code/launch.sh" --accuracy-suite \
+  --workspace "$HOME/geniac_math" --run-id "$GENIAC_SUITE_ID" --resume \
+  >> "$HOME/geniac_math/$GENIAC_SUITE_ID.console.log" 2>&1 < /dev/null &
+```
+
+SFTはoptimizer/scheduler/RNGを再開。オンラインはoptimizer/AMP/RNGをラウンドごとに保存し、未完了ラウンドを丸ごと再生成する。二重起動はworkspaceロックで拒否。終了済みsuiteの`--resume`は条件を変えた追加実験にはならない。学習量を変更する場合は新しいrun IDを使う。変更用オプションは`--sft-tokens`、`--online-rounds`、`--online-prompts`、`--online-eval-every`、`--online-lr`で、元の値を保存・再開時に照合する。
+
+### 結果と検証範囲
+
+- `suite_report.json`：全候補、coverage、確認・最終評価、推奨adapter。
+- `data/data_report.json`：公式取得元、SHA、問題対応、分割・実トークン予算。
+- `evaluations/dev/*/generations/rft_eval.json`：各候補の生の回答。
+- `evaluations/confirmation/`・`evaluations/final/`：凍結候補の生の回答。
+- `baselines/*/generations/b0_eval.json`：対応するrun03の生の回答。
+- `training_trials/online_*/rollouts/`：手を加えていないオンライン生成と自動採点。
+- `training_trials/*/training/rft/milestones/`：評価済みStage 2 adapter。
+
+CPUでは実データの全前処理と既知6,000問の対応を検証。小型Qwen＋LoRAでオンライン勾配方向・保存再読込、分割漏洩防止、同トークン予算、選択凍結を検証。GPUを使う通し実行はローカルでは未実施。実際の成績・時間・CUDAメモリ適合性はリモート実行で確認する。
+
 ## 採用モデルから提出用JSONを作成（2026-10-20）
 
 `c16h_20261019_215341`の採用候補`C_standard_step17`を使う。内部評価の`rft_final.json`を提出形式へ変換する処理ではなく、運営の232問をモデルで新しく推論する。共通Stage 1へ採用Stage 2を一度だけ統合し、greedy・最大2,048トークン・context8,192・chunk8で生成する。推論後の回答編集・再採点・多回答選択は行わない。

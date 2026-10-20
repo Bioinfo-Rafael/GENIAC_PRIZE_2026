@@ -200,7 +200,7 @@ def token_pairs(ctx):
 def load_train_model(ctx, adapter=None):
     import torch
     from transformers import AutoModelForCausalLM, BitsAndBytesConfig
-    from peft import PeftModel, prepare_model_for_kbit_training
+    from peft import PeftModel, LoraConfig, get_peft_model, prepare_model_for_kbit_training
     cfg, root = ctx['config'], Path(ctx['run'])
     dtype = getattr(torch, cfg['dtype'])
     base = AutoModelForCausalLM.from_pretrained(root / 'models' / 'stage1', device_map='cuda',
@@ -209,6 +209,19 @@ def load_train_model(ctx, adapter=None):
             bnb_4bit_compute_dtype=dtype))
     base = prepare_model_for_kbit_training(base, use_gradient_checkpointing=True,
                     gradient_checkpointing_kwargs={'use_reentrant': False})
+    if adapter is None:
+        if cfg.get('initial_adapter'):
+            adapter = Path(cfg['initial_adapter'])
+            if sha(adapter/'adapter_model.safetensors') != cfg['initial_adapter_sha256']:
+                raise ValueError('Initial adapter changed')
+        elif cfg.get('sft_initialization') == 'fresh':
+            source = compatible_adapter(Path(ctx['inputs'])/'stage2', root/'compatible'/'stage2')
+            config = LoraConfig.from_pretrained(source)
+            config.inference_mode = False
+            config.init_lora_weights = True
+            model = get_peft_model(base, config)
+            model.config.use_cache = False
+            return model
     if adapter is None:
         adapter = compatible_adapter(Path(ctx['inputs']) / 'stage2', root / 'compatible' / 'stage2')
     model = PeftModel.from_pretrained(base, adapter, is_trainable=True)

@@ -20,6 +20,11 @@ for task_arg in "$@"; do
     [[ "$TASK_ENTRY" == run.py ]] || { echo 'Choose one suite mode'; exit 2; }
     TASK_ENTRY=c_suite.py
     TASK_BUDGET=960
+  elif [[ "$task_arg" == --accuracy-suite ]]; then
+    [[ "$TASK_ENTRY" == run.py ]] || { echo 'Choose one suite mode'; exit 2; }
+    TASK_ENTRY=accuracy_suite.py
+    # Setup watchdog only. accuracy_suite.py has no training/evaluation deadline.
+    TASK_BUDGET=1440
   else
     TASK_ARGS+=("$task_arg")
   fi
@@ -71,7 +76,7 @@ install_env() {
 }
 install_env "$TASK_TRAIN_ENV" "$TASK_CODE_DIR/requirements-train.txt"
 install_env "$TASK_EVAL_ENV" "$TASK_CODE_DIR/requirements-eval.txt"
-if [[ "$TASK_ENTRY" == published_suite.py || "$TASK_ENTRY" == c_suite.py ]]; then
+if [[ "$TASK_ENTRY" == published_suite.py || "$TASK_ENTRY" == c_suite.py || "$TASK_ENTRY" == accuracy_suite.py ]]; then
   TASK_EXTRA_HASH="$(sha256sum "$TASK_CODE_DIR/requirements-published.txt" | cut -d ' ' -f 1)"
   if [[ ! -f "$TASK_TRAIN_ENV/.published.sha256" ]] || [[ "$(cat "$TASK_TRAIN_ENV/.published.sha256")" != "$TASK_EXTRA_HASH" ]]; then
     TASK_REMAINING=$((TASK_BUDGET * 60 - $(date +%s) + TASK_STARTED_AT - 60))
