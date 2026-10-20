@@ -1,5 +1,45 @@
 # RTX 6000 Ada：数学の追加学習と比較実験
 
+## 採用モデルから提出用JSONを作成（2026-10-20）
+
+`c16h_20261019_215341`の採用候補`C_standard_step17`を使う。内部評価の`rft_final.json`を提出形式へ変換する処理ではなく、運営の232問をモデルで新しく推論する。共通Stage 1へ採用Stage 2を一度だけ統合し、greedy・最大2,048トークン・context8,192・chunk8で生成する。推論後の回答編集・再採点・多回答選択は行わない。
+
+リモートで以下をまとめて実行する。初回はHugging Face read tokenを非表示入力する場合がある。運営データセットの利用条件への同意は事前に済ませておく。トークンはチャットやコードへ貼らない。
+
+```bash
+(
+set -e
+cd ~/geniac-remote
+git pull --ff-only origin main
+export HF_HOME="${HF_HOME:-$HOME/geniac_math/hf_cache}"
+"$HOME/geniac_math/.venv-train/bin/python" remote/math_training/submission.py login
+nohup bash remote/math_training/launch_submission.sh \
+  --source-suite "$HOME/geniac_math/suites/c16h_20261019_215341" \
+  > "$HOME/geniac_math/submission_C_standard_step17.console.log" 2>&1 < /dev/null &
+printf 'PID=%s\n' "$!"
+)
+```
+
+`remote/math_training/`だけのsparse-checkoutで実行可能。既存のtrain/eval環境を使い、データ取得用の`datasets`だけを別のCPU用venvへ入れる。既存GPU環境の依存関係を更新しない。ログイン状態は同じ`HF_HOME`で共有する。二重起動はworkspaceのlockで拒否する。
+
+```bash
+tail -f "$HOME/geniac_math/submission_C_standard_step17.console.log"
+```
+
+`SUBMISSION_READY`が出たら、提出するファイルは次の**`submission.json`だけ**。
+
+```text
+/home/suzuki/geniac_math/submissions/c16h_20261019_215341_C_standard_step17/submission.json
+```
+
+同じディレクトリの`format_check.json`に配布チェッカーの結果、`partial.json`に途中回答・生token・終了理由、`manifest.json`に選択候補とモデル/コードのハッシュ、`complete.json`に完成JSONのSHAを保存する。問題文・回答をコンソールへ表示しない。公式提出サイトへの送信は行わない。
+
+中断後は同じ起動コマンドで再開できる。アダプター・問題・コード・生成条件・主要推論パッケージが変わった場合は混在を拒否する。コード更新後の再開は保存先の`code/launch_submission.sh`を使う。完成済みならSHAを確認して終了する。
+
+`submission_assets/`は既存配布物の`math_sft/evalset.py`、`check_submission.py`、`inference_config.json`を無変更でコピーしたもの。SHAは同ディレクトリの`manifest.json`に記録。取得範囲・単一user入力・提出スキーマは維持し、配布ColabからリモートPython環境へ実行部分を移植した。実行場所・ライブラリ版は実際の値をJSONへ記録する。形式検査の通過はスコアや参加資格の判定ではない。
+
+CPUでは合成データによる生出力保持、途中再開、改変/重複検出、公式提出スキーマとの整合を検証。CUDAでの提出用推論はリモート実行時に確認する。
+
 ## 最新：Cの終了改善と正答率を両立する16時間比較（2026-10-19）
 
 今回の起動は **`--c-suite`**。旧Cの25%・50%とrun03のアダプター補間6候補、回答形式×終了処理の4条件、公開GSM/LIMO＋NLLの2学習率（`5e-6` / `1e-6`）を順に比較する。各学習はrun03から独立開始する。上位1候補をseed43と再推論で確認してから、候補を固定し最終評価する。最大960分には環境準備・生成・評価も含む。早く比較が完了した場合は終了する。
