@@ -12,7 +12,7 @@ R12の本番スコアはユーザー報告で **0.12394**。run IDは `rank64_12
 | D：rank64、6,000例 | 253（63.25%） | 86 | 167 | 62.25% | 64.75% | 1,389.72 |
 | R12：rank64、12,000例 | 248（62.00%） | 85 | 163 | 64.25% | 68.25% | 1,451.76 |
 
-R12−Dは−1.25ポイント、R12−Aは−0.75ポイント。R12のpaired bootstrap・学習時間・VRAMは今回受領した提出JSONには含まれず、リモートの `report.json` を参照する。本番とdevは別指標であり、Dの本番成績は未確認。
+R12−Dは−1.25ポイント、R12−Aは−0.75ポイント。R12のpaired bootstrap・学習時間・VRAMは今回受領した提出JSONには含まれず、リモートの `report.json` を参照する。本番とdevは別指標。Dの本番成績はその後0.16999と報告され、R12との差は−0.04605。
 
 提出metadataから、実際の高速化設定は **Unsloth / NF4 / attention auto / microbatch2 / gradient checkpointing有効 / packingなし**と確認。その他は下記レシピ。提出JSONは形式チェックのerror/warning/violationが全て0だった。
 
@@ -141,4 +141,12 @@ python -m pytest -q remote/rank64_12k/tests remote/math_training/tests/test_subm
 
 ## 原因診断（学習・再推論なし）
 
-[保存済み公開dev・教師token・更新lossのCPU診断](../rank64_diagnostics/README.md)を参照。D/R12の科目別の正誤変化、token配分、checkpoint残存状況を別出力先へ保存する。中間checkpointは直近2個以外が削除される実装なので、失われた地点を再学習で再現しない。公開教材キャッシュでは平均長・領域別target比率はほぼ同じで、全例に末尾EOSがあることを確認済み。リモートの正誤変化・lossログは集計後に解釈する。
+[保存済み公開dev・教師token・更新lossのCPU診断](../rank64_diagnostics/README.md)を参照。D/R12の科目別の正誤変化、token配分、checkpoint残存状況を別出力先へ保存する。中間checkpointは直近2個以外が削除される実装なので、失われた地点を再学習で再現しない。公開教材キャッシュでは平均長・領域別target比率はほぼ同じで、全例に末尾EOSがあることを確認済み。リモートの正誤変化・lossログは受領して解析済み。下記の統合分析を参照。
+
+## D・R12本番回答と保存ログの統合分析（2026-10-21）
+
+本番スコアは **D 0.16999、R12 0.12394**（ユーザー報告）。Dもrun03の0.18758を超えなかった。両提出の推論設定・主要ライブラリ版は一致。D→R12の公開devは27問改善・32問悪化、paired 95%区間は−5.25〜＋2.50ポイント。正しい演算が崩れる例と改善例の両方を提出回答から検算した。
+
+両者とも学習lossは低下し、全教師例にEOSがあるが、提出での反復はD 121/232→R12 145/232へ増加した。D/R12の残存ログでは数値発散の証拠はなく、token配分・教師長もほぼ同じ。早期checkpointは残らず、悪化開始時点は特定できない。今回は再学習・再推論を行わずに診断した。
+
+[全解析・仮説ごとの判定・lossグラフ](../../research/20261021_d_r12_diagnostic_review.md)、[公開dev変化59件](../../research/20261021_d_r12_dev_changes.md)、[集計JSON](../../research/20261021_d_r12_diagnostic_metrics.json)。正答率・本番スコアを主指標としてrun03を維持する。
