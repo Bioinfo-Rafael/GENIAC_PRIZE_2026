@@ -443,10 +443,16 @@ def train(ctx, branch, benchmark=False, until_step=None):
         step += 1
         torch.cuda.synchronize()
         elapsed.append(time.monotonic()-t0)
-        print(f'{branch} step={step}/{len(groups)} loss={loss_value:.6f} seconds={elapsed[-1]:.2f}', flush=True)
+        print(f'{branch} step={step}/{len(groups)} loss={loss_value:.6f} seconds={elapsed[-1]:.2f} '
+              f'elapsed={sum(elapsed):.1f}s eta={(len(groups)-step)*sum(elapsed)/len(elapsed):.1f}s '
+              f'teacher_tok_s={token_total/elapsed[-1]:.1f} peak_vram_gib={torch.cuda.max_memory_allocated()/2**30:.2f}', flush=True)
         with (dest / ('benchmark.jsonl' if benchmark else 'train.jsonl')).open('a') as f:
             import json
             f.write(json.dumps({'step':step, 'loss':loss_value, 'seconds':elapsed[-1],
+                                'elapsed_seconds':sum(elapsed),
+                                'remaining_seconds':(len(groups)-step)*sum(elapsed)/len(elapsed),
+                                'teacher_tokens_per_second':token_total/elapsed[-1],
+                                'teacher_tokens_this_update':token_total,
                                 'max_vram':torch.cuda.max_memory_allocated(), 'microbatch':runtime_microbatch,
                                 'objective':objective, 'gradient_norm':norm.item(),
                                 'supervised_tokens':plan['cumulative_tokens'][step-1] if plan and not benchmark else None,
@@ -462,7 +468,8 @@ def train(ctx, branch, benchmark=False, until_step=None):
             if not check_model(milestone):
                 milestone.parent.mkdir(parents=True, exist_ok=True)
                 save_model(model, tok, milestone)
-        if not benchmark and step % cfg['checkpoint_every'] == 0:
+        if not benchmark and (step % cfg['checkpoint_every'] == 0 or
+                              (cfg.get('checkpoint_at_milestones') and step in milestone_steps)):
             checkpoint_save()
         if until_step is not None and step>=until_step and step<len(groups):
             checkpoint_save()
