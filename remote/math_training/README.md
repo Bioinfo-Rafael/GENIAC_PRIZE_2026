@@ -1,5 +1,16 @@
 # RTX 6000 Ada：数学の追加学習と比較実験
 
+## 実行中accuracy suiteを短縮診断へ切り替える（2026-10-21）
+
+`short_diagnostic.py --source-suite <元suiteの絶対パス>`を既存`.venv-train/bin/python`で起動する。workspaceロックと元suiteのPID・コマンド・run ID・workspaceを照合してSIGTERMを送り、最大60秒ロック解放を待つ。無関係なプロセスやGPU全体をkillしない。元のコードsnapshotと設定を変更しないため、実行中のsnapshotは新しいgit pullの影響を受けない。
+
+1本目は停止後のレポートで評価完了している地点だけを採用する。未評価の途中学習分は保存されても今回の診断には使わない。2本目は凍結済みの最良SFTを起点に、元の128ラウンドのスケジュール・resume署名を保ち、16/32ラウンドでのみ評価して終了する。既存の2本目のcheckpointと評価は再利用可能。32を過ぎていて必要なmilestoneがない場合は巻き戻さず停止する。
+
+出力は`<元suite>/short_diagnostic/report.json`。SFTの全地点・50k〜1Mの最高地点、同条件6,000/12,000件のpaired比較、既存pass@8診断、両RL枝の実更新数・混在/全正解/全不正解グループ割合を保存する。2本目はrun03と出発点SFTの両方に比較する。最終評価・採用判定は行わず、終了状態は`diagnostic_complete`。元の`suite_report.json`は停止により`interrupted`になるが、その後の結果は短縮診断側を見る。
+
+短縮診断を再開する場合も同じコマンドを実行する。元suiteの`launch.sh --resume`は実行しない（元の長い計画が再開される）。CPU集計・未確認PIDへの停止拒否をテスト済み。リモートGPUでの切り替え通し実行は未確認。
+
+
 ## 正解率優先suite・時間上限なし（2026-10-20）
 
 `--accuracy-suite`は、既存の時間制限付きsuiteと独立した新しい実験。学習・評価にwall-clock制限はない。インストールにのみ24時間のwatchdogがあり、初期値ではSFT最大400万教師トークン/枝、オンライン128ラウンド/枝で終了する。延々と改善するまで回す処理ではない。時間見積もりは未測定。
