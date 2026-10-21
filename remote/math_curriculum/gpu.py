@@ -28,7 +28,7 @@ def train(root, stage, until=None, recipe=None):
     continuation=read(root/'continuation.json') if (root/'continuation.json').exists() else None
     if continuation:
         if stage!='stage2': raise ValueError('Continuation must never retrain Stage 1')
-        cfg['learning_rate']=5e-6
+        if recipe is None: cfg['learning_rate']=5e-6
         cfg['initial_adapter']=continuation['initial_adapter']
         cfg['initial_adapter_sha256']=continuation['initial_adapter_sha256']
     parent=BASE if stage=='stage1' else str(root/'models/stage1')

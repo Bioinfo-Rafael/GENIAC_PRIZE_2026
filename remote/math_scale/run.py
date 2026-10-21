@@ -82,7 +82,7 @@ class Runner:
         self.report['phase']=name+':'+phase;self.save()
         print('PHASE',name,phase,flush=True)
         start=time.monotonic();peak=0;offset=log.stat().st_size if log.exists() else 0;last_print=0;sent=False
-        cmd=[python,'-u',str(HERE/'phases.py'),phase,'--root',str(self.root)]
+        cmd=[python,'-u',str(getattr(self,'phase_script',HERE/'phases.py')),phase,'--root',str(self.root)]
         if phase=='prepare': cmd+=['--source',str(self.a.source.resolve())]
         else:cmd+=['--name',name]
         with log.open('a') as out:

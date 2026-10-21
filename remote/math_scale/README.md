@@ -76,3 +76,5 @@ bash -n remote/math_scale/launch.sh
 ```
 
 実GPU結果は実行後の `suite_report.json` と `runtime_summary.json` を正とする。
+
+本番R8-6kスコア0.19133の報告後、元の10時間枠の残りを使う[追加キュー](FOLLOWUP.md)を実装。元4条件の終了後も、学習→提出JSON生成・形式検査→公開評価を固定順で繰り返す。

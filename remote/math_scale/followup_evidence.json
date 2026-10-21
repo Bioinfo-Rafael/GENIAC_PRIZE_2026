@@ -1,0 +1,30 @@
+{
+  "recorded_date_jst": "2026-10-21",
+  "source": "User report in this conversation, not independently retrieved from the submission site",
+  "submission_site": "https://edu.omnicamp.us/courses/191/assignments/1092/",
+  "official_scores": {
+    "existing_cumulative3000": 0.20384,
+    "math_scale_20261021_v1_R8_6k": 0.19133
+  },
+  "difference_R8_6k_minus_cumulative3000": -0.01251,
+  "R8_6k_submission_sha256": "ccefd019befba7e1ec0faa1b2bb567db15ddd325068fd9dde5f708cf33f4868b",
+  "public_evaluation": {
+    "source": "Remote math_scale_20261021_v1/R8_6k/report.json, read from terminal; fixed PRM200/LIMO200",
+    "R8_6k": {"correct": 106, "n": 400, "accuracy": 0.265, "prm_correct": 97, "limo_correct": 9},
+    "cumulative3000": {"correct": 105, "n": 400, "accuracy": 0.2625, "prm_correct": 98, "limo_correct": 7},
+    "paired_accuracy_difference": 0.0025,
+    "paired_bootstrap_95_interval": [-0.02, 0.025],
+    "wrong_to_right": 11,
+    "right_to_wrong": 10
+  },
+  "observations": [
+    "A larger rank8 continuation did not improve the user-reported official aggregate score.",
+    "This single result does not identify the cause or establish statistically significant degradation.",
+    "Fixed public evaluation improved by one question, with a paired interval containing zero. It does not establish a benefit or explain the official decline.",
+    "No official questions, answers or per-question scores were inspected or used to select training examples.",
+    "The original four-condition plan remains unchanged. The new fixed queue explores gentler continuation, checkpoints and rank/LR controls."
+  ],
+  "deadline_jst": "2026-10-22T09:10:02+09:00",
+  "deadline_epoch": 1792627802,
+  "not_a_new_ten_hour_budget": true
+}
