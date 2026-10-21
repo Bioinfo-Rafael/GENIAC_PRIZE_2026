@@ -1,0 +1,65 @@
+{
+  "seed": 20261021,
+  "n": 400,
+  "train_exclusion_rows": 19473,
+  "extra_exclusion_rows": 1200,
+  "rejected": {
+    "prm800k:near_5gram_jaccard_0.85": 5
+  },
+  "eligible": {
+    "gsm8k": 1319,
+    "prm800k": 495
+  },
+  "quotas": {
+    "prm800k": {
+      "Prealgebra|5": 11,
+      "Intermediate Algebra|5": 22,
+      "Algebra|4": 18,
+      "Geometry|3": 4,
+      "Algebra|5": 18,
+      "Intermediate Algebra|4": 14,
+      "Precalculus|2": 8,
+      "Number Theory|4": 12,
+      "Algebra|1": 10,
+      "Number Theory|2": 6,
+      "Counting & Probability|4": 8,
+      "Prealgebra|1": 4,
+      "Geometry|5": 7,
+      "Intermediate Algebra|3": 12,
+      "Prealgebra|4": 12,
+      "Counting & Probability|1": 1,
+      "Algebra|3": 16,
+      "Precalculus|3": 9,
+      "Geometry|4": 6,
+      "Number Theory|3": 10,
+      "Precalculus|4": 7,
+      "Counting & Probability|3": 3,
+      "Prealgebra|2": 12,
+      "Algebra|2": 13,
+      "Intermediate Algebra|1": 4,
+      "Number Theory|5": 7,
+      "Precalculus|5": 7,
+      "Intermediate Algebra|2": 7,
+      "Prealgebra|3": 10,
+      "Counting & Probability|5": 7,
+      "Counting & Probability|2": 4,
+      "Geometry|2": 5,
+      "Geometry|1": 1,
+      "Precalculus|1": 2,
+      "Number Theory|1": 3
+    },
+    "gsm8k": {
+      "gsm8k|not_provided": 100
+    }
+  },
+  "overlap_after_filter": 0,
+  "definition": "Pinned public test; disjoint from known public math train/dev/final under documented matching. Pretraining and Stage 1 overlap not established.",
+  "rows_sha256": "7eafe2c0c46678af1483ea724948ccd394914771eb8362d4990ef4e91cf87d70",
+  "source_hashes": {
+    "prm_train": "90d96daeac3fe343ebb1e22ce93dd99690f75983e957f88de42f87cffe1e8076",
+    "prm_test": "35dc41080a3680858b27fa7e0533d2d547825316fc5dafe5d316f4ccc5a06132",
+    "gsm_train": "ea82612ea9582142387730c793eb67d3b12849002bc0b7fa6f8efafa7351419d",
+    "gsm_test": "ee7b8da9e381df27b9e3f7758a159ab2bdaa4dbaa910546cbbc47e0cb44e4f59"
+  },
+  "gold_parse_failures": {}
+}

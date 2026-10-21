@@ -1,0 +1,2988 @@
+{
+  "models": {
+    "A": {
+      "groups": {
+        "all": {
+          "current": {
+            "n": 400,
+            "correct": 251,
+            "accuracy": 0.6275,
+            "missing_selection": 24,
+            "extraction_failure": 25,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "first_box": {
+            "n": 400,
+            "correct": 251,
+            "accuracy": 0.6275,
+            "missing_selection": 21,
+            "extraction_failure": 22,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "last_box": {
+            "n": 400,
+            "correct": 251,
+            "accuracy": 0.6275,
+            "missing_selection": 24,
+            "extraction_failure": 25,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "explicit_final": {
+            "n": 400,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 400,
+            "extraction_failure": 400,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "transitions": {
+            "n": 400,
+            "both_extractable": 375,
+            "first_correct_last_wrong": 2,
+            "first_wrong_last_correct": 2,
+            "first_correct_last_wrong_both_extractable": 1
+          }
+        },
+        "dataset:prm800k": {
+          "current": {
+            "n": 300,
+            "correct": 167,
+            "accuracy": 0.5566666666666666,
+            "missing_selection": 23,
+            "extraction_failure": 23,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "first_box": {
+            "n": 300,
+            "correct": 167,
+            "accuracy": 0.5566666666666666,
+            "missing_selection": 20,
+            "extraction_failure": 20,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "last_box": {
+            "n": 300,
+            "correct": 167,
+            "accuracy": 0.5566666666666666,
+            "missing_selection": 23,
+            "extraction_failure": 23,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "explicit_final": {
+            "n": 300,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 300,
+            "extraction_failure": 300,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "transitions": {
+            "n": 300,
+            "both_extractable": 277,
+            "first_correct_last_wrong": 2,
+            "first_wrong_last_correct": 2,
+            "first_correct_last_wrong_both_extractable": 1
+          }
+        },
+        "subject:Algebra": {
+          "current": {
+            "n": 72,
+            "correct": 54,
+            "accuracy": 0.75,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 72,
+            "correct": 54,
+            "accuracy": 0.75,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 72,
+            "correct": 54,
+            "accuracy": 0.75,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 72,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 72,
+            "extraction_failure": 72,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 72,
+            "both_extractable": 70,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "difficulty:prm800k:1": {
+          "current": {
+            "n": 31,
+            "correct": 28,
+            "accuracy": 0.9032258064516129,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 31,
+            "correct": 27,
+            "accuracy": 0.8709677419354839,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 31,
+            "correct": 28,
+            "accuracy": 0.9032258064516129,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 31,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 31,
+            "extraction_failure": 31,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 31,
+            "both_extractable": 30,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 1,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "length:<= 2048": {
+          "current": {
+            "n": 126,
+            "correct": 62,
+            "accuracy": 0.49206349206349204,
+            "missing_selection": 19,
+            "extraction_failure": 19,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 126,
+            "correct": 62,
+            "accuracy": 0.49206349206349204,
+            "missing_selection": 16,
+            "extraction_failure": 16,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 126,
+            "correct": 62,
+            "accuracy": 0.49206349206349204,
+            "missing_selection": 19,
+            "extraction_failure": 19,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 126,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 126,
+            "extraction_failure": 126,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 126,
+            "both_extractable": 107,
+            "first_correct_last_wrong": 2,
+            "first_wrong_last_correct": 2,
+            "first_correct_last_wrong_both_extractable": 1
+          }
+        },
+        "subject:Geometry": {
+          "current": {
+            "n": 34,
+            "correct": 15,
+            "accuracy": 0.4411764705882353,
+            "missing_selection": 7,
+            "extraction_failure": 7,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 34,
+            "correct": 15,
+            "accuracy": 0.4411764705882353,
+            "missing_selection": 7,
+            "extraction_failure": 7,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 34,
+            "correct": 15,
+            "accuracy": 0.4411764705882353,
+            "missing_selection": 7,
+            "extraction_failure": 7,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 34,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 34,
+            "extraction_failure": 34,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 34,
+            "both_extractable": 27,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "difficulty:prm800k:4": {
+          "current": {
+            "n": 73,
+            "correct": 37,
+            "accuracy": 0.5068493150684932,
+            "missing_selection": 3,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 73,
+            "correct": 37,
+            "accuracy": 0.5068493150684932,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 73,
+            "correct": 37,
+            "accuracy": 0.5068493150684932,
+            "missing_selection": 3,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 73,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 73,
+            "extraction_failure": 73,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 73,
+            "both_extractable": 70,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "subject:Prealgebra": {
+          "current": {
+            "n": 42,
+            "correct": 31,
+            "accuracy": 0.7380952380952381,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "first_box": {
+            "n": 42,
+            "correct": 30,
+            "accuracy": 0.7142857142857143,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "last_box": {
+            "n": 42,
+            "correct": 31,
+            "accuracy": 0.7380952380952381,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "explicit_final": {
+            "n": 42,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 42,
+            "extraction_failure": 42,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "transitions": {
+            "n": 42,
+            "both_extractable": 40,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 1,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "difficulty:prm800k:3": {
+          "current": {
+            "n": 53,
+            "correct": 31,
+            "accuracy": 0.5849056603773585,
+            "missing_selection": 5,
+            "extraction_failure": 5,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "first_box": {
+            "n": 53,
+            "correct": 32,
+            "accuracy": 0.6037735849056604,
+            "missing_selection": 4,
+            "extraction_failure": 4,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "last_box": {
+            "n": 53,
+            "correct": 31,
+            "accuracy": 0.5849056603773585,
+            "missing_selection": 5,
+            "extraction_failure": 5,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "explicit_final": {
+            "n": 53,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 53,
+            "extraction_failure": 53,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "transitions": {
+            "n": 53,
+            "both_extractable": 48,
+            "first_correct_last_wrong": 1,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "length:<= 256": {
+          "current": {
+            "n": 229,
+            "correct": 177,
+            "accuracy": 0.7729257641921398,
+            "missing_selection": 4,
+            "extraction_failure": 5,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "first_box": {
+            "n": 229,
+            "correct": 177,
+            "accuracy": 0.7729257641921398,
+            "missing_selection": 4,
+            "extraction_failure": 5,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "last_box": {
+            "n": 229,
+            "correct": 177,
+            "accuracy": 0.7729257641921398,
+            "missing_selection": 4,
+            "extraction_failure": 5,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "explicit_final": {
+            "n": 229,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 229,
+            "extraction_failure": 229,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "transitions": {
+            "n": 229,
+            "both_extractable": 224,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "difficulty:prm800k:5": {
+          "current": {
+            "n": 88,
+            "correct": 24,
+            "accuracy": 0.2727272727272727,
+            "missing_selection": 13,
+            "extraction_failure": 13,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 88,
+            "correct": 23,
+            "accuracy": 0.26136363636363635,
+            "missing_selection": 13,
+            "extraction_failure": 13,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 88,
+            "correct": 24,
+            "accuracy": 0.2727272727272727,
+            "missing_selection": 13,
+            "extraction_failure": 13,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 88,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 88,
+            "extraction_failure": 88,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 88,
+            "both_extractable": 75,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 1,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "subject:Intermediate Algebra": {
+          "current": {
+            "n": 54,
+            "correct": 19,
+            "accuracy": 0.35185185185185186,
+            "missing_selection": 7,
+            "extraction_failure": 7,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 54,
+            "correct": 18,
+            "accuracy": 0.3333333333333333,
+            "missing_selection": 5,
+            "extraction_failure": 5,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 54,
+            "correct": 19,
+            "accuracy": 0.35185185185185186,
+            "missing_selection": 7,
+            "extraction_failure": 7,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 54,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 54,
+            "extraction_failure": 54,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 54,
+            "both_extractable": 47,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 1,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "subject:Number Theory": {
+          "current": {
+            "n": 35,
+            "correct": 18,
+            "accuracy": 0.5142857142857142,
+            "missing_selection": 4,
+            "extraction_failure": 4,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 35,
+            "correct": 19,
+            "accuracy": 0.5428571428571428,
+            "missing_selection": 3,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 35,
+            "correct": 18,
+            "accuracy": 0.5142857142857142,
+            "missing_selection": 4,
+            "extraction_failure": 4,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 35,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 35,
+            "extraction_failure": 35,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 35,
+            "both_extractable": 31,
+            "first_correct_last_wrong": 1,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "difficulty:prm800k:2": {
+          "current": {
+            "n": 55,
+            "correct": 47,
+            "accuracy": 0.8545454545454545,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 55,
+            "correct": 48,
+            "accuracy": 0.8727272727272727,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 55,
+            "correct": 47,
+            "accuracy": 0.8545454545454545,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 55,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 55,
+            "extraction_failure": 55,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 55,
+            "both_extractable": 54,
+            "first_correct_last_wrong": 1,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 1
+          }
+        },
+        "length:<= 512": {
+          "current": {
+            "n": 35,
+            "correct": 10,
+            "accuracy": 0.2857142857142857,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 35,
+            "correct": 10,
+            "accuracy": 0.2857142857142857,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 35,
+            "correct": 10,
+            "accuracy": 0.2857142857142857,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 35,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 35,
+            "extraction_failure": 35,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 35,
+            "both_extractable": 34,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "subject:Precalculus": {
+          "current": {
+            "n": 35,
+            "correct": 18,
+            "accuracy": 0.5142857142857142,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 35,
+            "correct": 18,
+            "accuracy": 0.5142857142857142,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 35,
+            "correct": 18,
+            "accuracy": 0.5142857142857142,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 35,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 35,
+            "extraction_failure": 35,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 35,
+            "both_extractable": 35,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "subject:Counting & Probability": {
+          "current": {
+            "n": 28,
+            "correct": 12,
+            "accuracy": 0.42857142857142855,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 28,
+            "correct": 13,
+            "accuracy": 0.4642857142857143,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 28,
+            "correct": 12,
+            "accuracy": 0.42857142857142855,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 28,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 28,
+            "extraction_failure": 28,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 28,
+            "both_extractable": 27,
+            "first_correct_last_wrong": 1,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 1
+          }
+        },
+        "length:<= 1024": {
+          "current": {
+            "n": 10,
+            "correct": 2,
+            "accuracy": 0.2,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 10,
+            "correct": 2,
+            "accuracy": 0.2,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 10,
+            "correct": 2,
+            "accuracy": 0.2,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 10,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 10,
+            "extraction_failure": 10,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 10,
+            "both_extractable": 10,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "dataset:gsm8k": {
+          "current": {
+            "n": 100,
+            "correct": 84,
+            "accuracy": 0.84,
+            "missing_selection": 1,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 100,
+            "correct": 84,
+            "accuracy": 0.84,
+            "missing_selection": 1,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 100,
+            "correct": 84,
+            "accuracy": 0.84,
+            "missing_selection": 1,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 100,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 100,
+            "extraction_failure": 100,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 100,
+            "both_extractable": 98,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "subject:gsm8k": {
+          "current": {
+            "n": 100,
+            "correct": 84,
+            "accuracy": 0.84,
+            "missing_selection": 1,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 100,
+            "correct": 84,
+            "accuracy": 0.84,
+            "missing_selection": 1,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 100,
+            "correct": 84,
+            "accuracy": 0.84,
+            "missing_selection": 1,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 100,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 100,
+            "extraction_failure": 100,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 100,
+            "both_extractable": 98,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "difficulty:gsm8k:not_provided": {
+          "current": {
+            "n": 100,
+            "correct": 84,
+            "accuracy": 0.84,
+            "missing_selection": 1,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 100,
+            "correct": 84,
+            "accuracy": 0.84,
+            "missing_selection": 1,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 100,
+            "correct": 84,
+            "accuracy": 0.84,
+            "missing_selection": 1,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 100,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 100,
+            "extraction_failure": 100,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 100,
+            "both_extractable": 98,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        }
+      },
+      "saved_current_correctness_disagreements": 0
+    },
+    "D": {
+      "groups": {
+        "all": {
+          "current": {
+            "n": 400,
+            "correct": 253,
+            "accuracy": 0.6325,
+            "missing_selection": 22,
+            "extraction_failure": 22,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "first_box": {
+            "n": 400,
+            "correct": 259,
+            "accuracy": 0.6475,
+            "missing_selection": 20,
+            "extraction_failure": 20,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "last_box": {
+            "n": 400,
+            "correct": 253,
+            "accuracy": 0.6325,
+            "missing_selection": 22,
+            "extraction_failure": 22,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "explicit_final": {
+            "n": 400,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 400,
+            "extraction_failure": 400,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "transitions": {
+            "n": 400,
+            "both_extractable": 378,
+            "first_correct_last_wrong": 6,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 5
+          }
+        },
+        "dataset:prm800k": {
+          "current": {
+            "n": 300,
+            "correct": 167,
+            "accuracy": 0.5566666666666666,
+            "missing_selection": 21,
+            "extraction_failure": 21,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "first_box": {
+            "n": 300,
+            "correct": 172,
+            "accuracy": 0.5733333333333334,
+            "missing_selection": 19,
+            "extraction_failure": 19,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "last_box": {
+            "n": 300,
+            "correct": 167,
+            "accuracy": 0.5566666666666666,
+            "missing_selection": 21,
+            "extraction_failure": 21,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "explicit_final": {
+            "n": 300,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 300,
+            "extraction_failure": 300,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "transitions": {
+            "n": 300,
+            "both_extractable": 279,
+            "first_correct_last_wrong": 5,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 4
+          }
+        },
+        "subject:Algebra": {
+          "current": {
+            "n": 72,
+            "correct": 56,
+            "accuracy": 0.7777777777777778,
+            "missing_selection": 3,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 72,
+            "correct": 56,
+            "accuracy": 0.7777777777777778,
+            "missing_selection": 3,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 72,
+            "correct": 56,
+            "accuracy": 0.7777777777777778,
+            "missing_selection": 3,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 72,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 72,
+            "extraction_failure": 72,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 72,
+            "both_extractable": 69,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "difficulty:prm800k:1": {
+          "current": {
+            "n": 31,
+            "correct": 26,
+            "accuracy": 0.8387096774193549,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 31,
+            "correct": 28,
+            "accuracy": 0.9032258064516129,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 31,
+            "correct": 26,
+            "accuracy": 0.8387096774193549,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 31,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 31,
+            "extraction_failure": 31,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 31,
+            "both_extractable": 29,
+            "first_correct_last_wrong": 2,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 1
+          }
+        },
+        "length:<= 2048": {
+          "current": {
+            "n": 260,
+            "correct": 139,
+            "accuracy": 0.5346153846153846,
+            "missing_selection": 21,
+            "extraction_failure": 21,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "first_box": {
+            "n": 260,
+            "correct": 144,
+            "accuracy": 0.5538461538461539,
+            "missing_selection": 19,
+            "extraction_failure": 19,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "last_box": {
+            "n": 260,
+            "correct": 139,
+            "accuracy": 0.5346153846153846,
+            "missing_selection": 21,
+            "extraction_failure": 21,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "explicit_final": {
+            "n": 260,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 260,
+            "extraction_failure": 260,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "transitions": {
+            "n": 260,
+            "both_extractable": 239,
+            "first_correct_last_wrong": 5,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 4
+          }
+        },
+        "subject:Geometry": {
+          "current": {
+            "n": 34,
+            "correct": 17,
+            "accuracy": 0.5,
+            "missing_selection": 7,
+            "extraction_failure": 7,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 34,
+            "correct": 17,
+            "accuracy": 0.5,
+            "missing_selection": 6,
+            "extraction_failure": 6,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 34,
+            "correct": 17,
+            "accuracy": 0.5,
+            "missing_selection": 7,
+            "extraction_failure": 7,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 34,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 34,
+            "extraction_failure": 34,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 34,
+            "both_extractable": 27,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "difficulty:prm800k:4": {
+          "current": {
+            "n": 73,
+            "correct": 34,
+            "accuracy": 0.4657534246575342,
+            "missing_selection": 3,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 73,
+            "correct": 34,
+            "accuracy": 0.4657534246575342,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 73,
+            "correct": 34,
+            "accuracy": 0.4657534246575342,
+            "missing_selection": 3,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 73,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 73,
+            "extraction_failure": 73,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 73,
+            "both_extractable": 70,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "subject:Prealgebra": {
+          "current": {
+            "n": 42,
+            "correct": 30,
+            "accuracy": 0.7142857142857143,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "first_box": {
+            "n": 42,
+            "correct": 31,
+            "accuracy": 0.7380952380952381,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "last_box": {
+            "n": 42,
+            "correct": 30,
+            "accuracy": 0.7142857142857143,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "explicit_final": {
+            "n": 42,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 42,
+            "extraction_failure": 42,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "transitions": {
+            "n": 42,
+            "both_extractable": 40,
+            "first_correct_last_wrong": 1,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "difficulty:prm800k:3": {
+          "current": {
+            "n": 53,
+            "correct": 35,
+            "accuracy": 0.660377358490566,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "first_box": {
+            "n": 53,
+            "correct": 35,
+            "accuracy": 0.660377358490566,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "last_box": {
+            "n": 53,
+            "correct": 35,
+            "accuracy": 0.660377358490566,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "explicit_final": {
+            "n": 53,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 53,
+            "extraction_failure": 53,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "transitions": {
+            "n": 53,
+            "both_extractable": 51,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "difficulty:prm800k:5": {
+          "current": {
+            "n": 88,
+            "correct": 26,
+            "accuracy": 0.29545454545454547,
+            "missing_selection": 14,
+            "extraction_failure": 14,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 88,
+            "correct": 27,
+            "accuracy": 0.3068181818181818,
+            "missing_selection": 14,
+            "extraction_failure": 14,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 88,
+            "correct": 26,
+            "accuracy": 0.29545454545454547,
+            "missing_selection": 14,
+            "extraction_failure": 14,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 88,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 88,
+            "extraction_failure": 88,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 88,
+            "both_extractable": 74,
+            "first_correct_last_wrong": 1,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 1
+          }
+        },
+        "length:<= 256": {
+          "current": {
+            "n": 116,
+            "correct": 101,
+            "accuracy": 0.8706896551724138,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 116,
+            "correct": 101,
+            "accuracy": 0.8706896551724138,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 116,
+            "correct": 101,
+            "accuracy": 0.8706896551724138,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 116,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 116,
+            "extraction_failure": 116,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 116,
+            "both_extractable": 115,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "subject:Intermediate Algebra": {
+          "current": {
+            "n": 54,
+            "correct": 19,
+            "accuracy": 0.35185185185185186,
+            "missing_selection": 6,
+            "extraction_failure": 6,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 54,
+            "correct": 19,
+            "accuracy": 0.35185185185185186,
+            "missing_selection": 6,
+            "extraction_failure": 6,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 54,
+            "correct": 19,
+            "accuracy": 0.35185185185185186,
+            "missing_selection": 6,
+            "extraction_failure": 6,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 54,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 54,
+            "extraction_failure": 54,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 54,
+            "both_extractable": 48,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "subject:Number Theory": {
+          "current": {
+            "n": 35,
+            "correct": 17,
+            "accuracy": 0.4857142857142857,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 35,
+            "correct": 18,
+            "accuracy": 0.5142857142857142,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 35,
+            "correct": 17,
+            "accuracy": 0.4857142857142857,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 35,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 35,
+            "extraction_failure": 35,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 35,
+            "both_extractable": 33,
+            "first_correct_last_wrong": 1,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 1
+          }
+        },
+        "difficulty:prm800k:2": {
+          "current": {
+            "n": 55,
+            "correct": 46,
+            "accuracy": 0.8363636363636363,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 55,
+            "correct": 48,
+            "accuracy": 0.8727272727272727,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 55,
+            "correct": 46,
+            "accuracy": 0.8363636363636363,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 55,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 55,
+            "extraction_failure": 55,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 55,
+            "both_extractable": 55,
+            "first_correct_last_wrong": 2,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 2
+          }
+        },
+        "subject:Precalculus": {
+          "current": {
+            "n": 35,
+            "correct": 14,
+            "accuracy": 0.4,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 35,
+            "correct": 17,
+            "accuracy": 0.4857142857142857,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 35,
+            "correct": 14,
+            "accuracy": 0.4,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 35,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 35,
+            "extraction_failure": 35,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 35,
+            "both_extractable": 35,
+            "first_correct_last_wrong": 3,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 3
+          }
+        },
+        "subject:Counting & Probability": {
+          "current": {
+            "n": 28,
+            "correct": 14,
+            "accuracy": 0.5,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 28,
+            "correct": 14,
+            "accuracy": 0.5,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 28,
+            "correct": 14,
+            "accuracy": 0.5,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 28,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 28,
+            "extraction_failure": 28,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 28,
+            "both_extractable": 27,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "length:<= 512": {
+          "current": {
+            "n": 13,
+            "correct": 10,
+            "accuracy": 0.7692307692307693,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 13,
+            "correct": 11,
+            "accuracy": 0.8461538461538461,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 13,
+            "correct": 10,
+            "accuracy": 0.7692307692307693,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 13,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 13,
+            "extraction_failure": 13,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 13,
+            "both_extractable": 13,
+            "first_correct_last_wrong": 1,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 1
+          }
+        },
+        "length:<= 1024": {
+          "current": {
+            "n": 11,
+            "correct": 3,
+            "accuracy": 0.2727272727272727,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 11,
+            "correct": 3,
+            "accuracy": 0.2727272727272727,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 11,
+            "correct": 3,
+            "accuracy": 0.2727272727272727,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 11,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 11,
+            "extraction_failure": 11,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 11,
+            "both_extractable": 11,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "dataset:gsm8k": {
+          "current": {
+            "n": 100,
+            "correct": 86,
+            "accuracy": 0.86,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 100,
+            "correct": 87,
+            "accuracy": 0.87,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 100,
+            "correct": 86,
+            "accuracy": 0.86,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 100,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 100,
+            "extraction_failure": 100,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 100,
+            "both_extractable": 99,
+            "first_correct_last_wrong": 1,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 1
+          }
+        },
+        "subject:gsm8k": {
+          "current": {
+            "n": 100,
+            "correct": 86,
+            "accuracy": 0.86,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 100,
+            "correct": 87,
+            "accuracy": 0.87,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 100,
+            "correct": 86,
+            "accuracy": 0.86,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 100,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 100,
+            "extraction_failure": 100,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 100,
+            "both_extractable": 99,
+            "first_correct_last_wrong": 1,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 1
+          }
+        },
+        "difficulty:gsm8k:not_provided": {
+          "current": {
+            "n": 100,
+            "correct": 86,
+            "accuracy": 0.86,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 100,
+            "correct": 87,
+            "accuracy": 0.87,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 100,
+            "correct": 86,
+            "accuracy": 0.86,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 100,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 100,
+            "extraction_failure": 100,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 100,
+            "both_extractable": 99,
+            "first_correct_last_wrong": 1,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 1
+          }
+        }
+      },
+      "saved_current_correctness_disagreements": 0
+    },
+    "R12": {
+      "groups": {
+        "all": {
+          "current": {
+            "n": 400,
+            "correct": 248,
+            "accuracy": 0.62,
+            "missing_selection": 24,
+            "extraction_failure": 26,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "first_box": {
+            "n": 400,
+            "correct": 254,
+            "accuracy": 0.635,
+            "missing_selection": 22,
+            "extraction_failure": 24,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "last_box": {
+            "n": 400,
+            "correct": 248,
+            "accuracy": 0.62,
+            "missing_selection": 24,
+            "extraction_failure": 26,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "explicit_final": {
+            "n": 400,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 400,
+            "extraction_failure": 400,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "transitions": {
+            "n": 400,
+            "both_extractable": 374,
+            "first_correct_last_wrong": 7,
+            "first_wrong_last_correct": 1,
+            "first_correct_last_wrong_both_extractable": 5
+          }
+        },
+        "dataset:prm800k": {
+          "current": {
+            "n": 300,
+            "correct": 163,
+            "accuracy": 0.5433333333333333,
+            "missing_selection": 22,
+            "extraction_failure": 23,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "first_box": {
+            "n": 300,
+            "correct": 169,
+            "accuracy": 0.5633333333333334,
+            "missing_selection": 20,
+            "extraction_failure": 21,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "last_box": {
+            "n": 300,
+            "correct": 163,
+            "accuracy": 0.5433333333333333,
+            "missing_selection": 22,
+            "extraction_failure": 23,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "explicit_final": {
+            "n": 300,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 300,
+            "extraction_failure": 300,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "transitions": {
+            "n": 300,
+            "both_extractable": 277,
+            "first_correct_last_wrong": 7,
+            "first_wrong_last_correct": 1,
+            "first_correct_last_wrong_both_extractable": 5
+          }
+        },
+        "subject:Algebra": {
+          "current": {
+            "n": 72,
+            "correct": 53,
+            "accuracy": 0.7361111111111112,
+            "missing_selection": 3,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 72,
+            "correct": 55,
+            "accuracy": 0.7638888888888888,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 72,
+            "correct": 53,
+            "accuracy": 0.7361111111111112,
+            "missing_selection": 3,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 72,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 72,
+            "extraction_failure": 72,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 72,
+            "both_extractable": 69,
+            "first_correct_last_wrong": 2,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 1
+          }
+        },
+        "difficulty:prm800k:1": {
+          "current": {
+            "n": 31,
+            "correct": 28,
+            "accuracy": 0.9032258064516129,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 31,
+            "correct": 28,
+            "accuracy": 0.9032258064516129,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 31,
+            "correct": 28,
+            "accuracy": 0.9032258064516129,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 31,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 31,
+            "extraction_failure": 31,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 31,
+            "both_extractable": 30,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "length:<= 2048": {
+          "current": {
+            "n": 273,
+            "correct": 144,
+            "accuracy": 0.5274725274725275,
+            "missing_selection": 24,
+            "extraction_failure": 25,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "first_box": {
+            "n": 273,
+            "correct": 150,
+            "accuracy": 0.5494505494505495,
+            "missing_selection": 22,
+            "extraction_failure": 23,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "last_box": {
+            "n": 273,
+            "correct": 144,
+            "accuracy": 0.5274725274725275,
+            "missing_selection": 24,
+            "extraction_failure": 25,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "explicit_final": {
+            "n": 273,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 273,
+            "extraction_failure": 273,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "transitions": {
+            "n": 273,
+            "both_extractable": 248,
+            "first_correct_last_wrong": 7,
+            "first_wrong_last_correct": 1,
+            "first_correct_last_wrong_both_extractable": 5
+          }
+        },
+        "subject:Geometry": {
+          "current": {
+            "n": 34,
+            "correct": 17,
+            "accuracy": 0.5,
+            "missing_selection": 7,
+            "extraction_failure": 7,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 34,
+            "correct": 17,
+            "accuracy": 0.5,
+            "missing_selection": 7,
+            "extraction_failure": 7,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 34,
+            "correct": 17,
+            "accuracy": 0.5,
+            "missing_selection": 7,
+            "extraction_failure": 7,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 34,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 34,
+            "extraction_failure": 34,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 34,
+            "both_extractable": 27,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "difficulty:prm800k:4": {
+          "current": {
+            "n": 73,
+            "correct": 37,
+            "accuracy": 0.5068493150684932,
+            "missing_selection": 5,
+            "extraction_failure": 5,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 73,
+            "correct": 37,
+            "accuracy": 0.5068493150684932,
+            "missing_selection": 5,
+            "extraction_failure": 5,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 73,
+            "correct": 37,
+            "accuracy": 0.5068493150684932,
+            "missing_selection": 5,
+            "extraction_failure": 5,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 73,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 73,
+            "extraction_failure": 73,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 73,
+            "both_extractable": 68,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "subject:Prealgebra": {
+          "current": {
+            "n": 42,
+            "correct": 32,
+            "accuracy": 0.7619047619047619,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "first_box": {
+            "n": 42,
+            "correct": 32,
+            "accuracy": 0.7619047619047619,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "last_box": {
+            "n": 42,
+            "correct": 32,
+            "accuracy": 0.7619047619047619,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "explicit_final": {
+            "n": 42,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 42,
+            "extraction_failure": 42,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "transitions": {
+            "n": 42,
+            "both_extractable": 41,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "difficulty:prm800k:3": {
+          "current": {
+            "n": 53,
+            "correct": 35,
+            "accuracy": 0.660377358490566,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "first_box": {
+            "n": 53,
+            "correct": 36,
+            "accuracy": 0.6792452830188679,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "last_box": {
+            "n": 53,
+            "correct": 35,
+            "accuracy": 0.660377358490566,
+            "missing_selection": 2,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "explicit_final": {
+            "n": 53,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 53,
+            "extraction_failure": 53,
+            "grader_error": 0,
+            "gold_unparseable": 1
+          },
+          "transitions": {
+            "n": 53,
+            "both_extractable": 51,
+            "first_correct_last_wrong": 2,
+            "first_wrong_last_correct": 1,
+            "first_correct_last_wrong_both_extractable": 1
+          }
+        },
+        "difficulty:prm800k:5": {
+          "current": {
+            "n": 88,
+            "correct": 22,
+            "accuracy": 0.25,
+            "missing_selection": 13,
+            "extraction_failure": 13,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 88,
+            "correct": 24,
+            "accuracy": 0.2727272727272727,
+            "missing_selection": 13,
+            "extraction_failure": 13,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 88,
+            "correct": 22,
+            "accuracy": 0.25,
+            "missing_selection": 13,
+            "extraction_failure": 13,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 88,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 88,
+            "extraction_failure": 88,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 88,
+            "both_extractable": 75,
+            "first_correct_last_wrong": 2,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 2
+          }
+        },
+        "length:<= 256": {
+          "current": {
+            "n": 104,
+            "correct": 92,
+            "accuracy": 0.8846153846153846,
+            "missing_selection": 0,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 104,
+            "correct": 92,
+            "accuracy": 0.8846153846153846,
+            "missing_selection": 0,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 104,
+            "correct": 92,
+            "accuracy": 0.8846153846153846,
+            "missing_selection": 0,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 104,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 104,
+            "extraction_failure": 104,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 104,
+            "both_extractable": 103,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "subject:Intermediate Algebra": {
+          "current": {
+            "n": 54,
+            "correct": 17,
+            "accuracy": 0.3148148148148148,
+            "missing_selection": 5,
+            "extraction_failure": 5,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 54,
+            "correct": 18,
+            "accuracy": 0.3333333333333333,
+            "missing_selection": 5,
+            "extraction_failure": 5,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 54,
+            "correct": 17,
+            "accuracy": 0.3148148148148148,
+            "missing_selection": 5,
+            "extraction_failure": 5,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 54,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 54,
+            "extraction_failure": 54,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 54,
+            "both_extractable": 49,
+            "first_correct_last_wrong": 2,
+            "first_wrong_last_correct": 1,
+            "first_correct_last_wrong_both_extractable": 2
+          }
+        },
+        "subject:Number Theory": {
+          "current": {
+            "n": 35,
+            "correct": 17,
+            "accuracy": 0.4857142857142857,
+            "missing_selection": 3,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 35,
+            "correct": 18,
+            "accuracy": 0.5142857142857142,
+            "missing_selection": 3,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 35,
+            "correct": 17,
+            "accuracy": 0.4857142857142857,
+            "missing_selection": 3,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 35,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 35,
+            "extraction_failure": 35,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 35,
+            "both_extractable": 32,
+            "first_correct_last_wrong": 1,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 1
+          }
+        },
+        "difficulty:prm800k:2": {
+          "current": {
+            "n": 55,
+            "correct": 41,
+            "accuracy": 0.7454545454545455,
+            "missing_selection": 1,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 55,
+            "correct": 44,
+            "accuracy": 0.8,
+            "missing_selection": 0,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 55,
+            "correct": 41,
+            "accuracy": 0.7454545454545455,
+            "missing_selection": 1,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 55,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 55,
+            "extraction_failure": 55,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 55,
+            "both_extractable": 53,
+            "first_correct_last_wrong": 3,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 2
+          }
+        },
+        "subject:Precalculus": {
+          "current": {
+            "n": 35,
+            "correct": 15,
+            "accuracy": 0.42857142857142855,
+            "missing_selection": 2,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 35,
+            "correct": 16,
+            "accuracy": 0.45714285714285713,
+            "missing_selection": 1,
+            "extraction_failure": 2,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 35,
+            "correct": 15,
+            "accuracy": 0.42857142857142855,
+            "missing_selection": 2,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 35,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 35,
+            "extraction_failure": 35,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 35,
+            "both_extractable": 32,
+            "first_correct_last_wrong": 1,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "subject:Counting & Probability": {
+          "current": {
+            "n": 28,
+            "correct": 12,
+            "accuracy": 0.42857142857142855,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 28,
+            "correct": 13,
+            "accuracy": 0.4642857142857143,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 28,
+            "correct": 12,
+            "accuracy": 0.42857142857142855,
+            "missing_selection": 1,
+            "extraction_failure": 1,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 28,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 28,
+            "extraction_failure": 28,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 28,
+            "both_extractable": 27,
+            "first_correct_last_wrong": 1,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 1
+          }
+        },
+        "length:<= 512": {
+          "current": {
+            "n": 16,
+            "correct": 10,
+            "accuracy": 0.625,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 16,
+            "correct": 10,
+            "accuracy": 0.625,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 16,
+            "correct": 10,
+            "accuracy": 0.625,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 16,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 16,
+            "extraction_failure": 16,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 16,
+            "both_extractable": 16,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "length:<= 1024": {
+          "current": {
+            "n": 7,
+            "correct": 2,
+            "accuracy": 0.2857142857142857,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 7,
+            "correct": 2,
+            "accuracy": 0.2857142857142857,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 7,
+            "correct": 2,
+            "accuracy": 0.2857142857142857,
+            "missing_selection": 0,
+            "extraction_failure": 0,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 7,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 7,
+            "extraction_failure": 7,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 7,
+            "both_extractable": 7,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "dataset:gsm8k": {
+          "current": {
+            "n": 100,
+            "correct": 85,
+            "accuracy": 0.85,
+            "missing_selection": 2,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 100,
+            "correct": 85,
+            "accuracy": 0.85,
+            "missing_selection": 2,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 100,
+            "correct": 85,
+            "accuracy": 0.85,
+            "missing_selection": 2,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 100,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 100,
+            "extraction_failure": 100,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 100,
+            "both_extractable": 97,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "subject:gsm8k": {
+          "current": {
+            "n": 100,
+            "correct": 85,
+            "accuracy": 0.85,
+            "missing_selection": 2,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 100,
+            "correct": 85,
+            "accuracy": 0.85,
+            "missing_selection": 2,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 100,
+            "correct": 85,
+            "accuracy": 0.85,
+            "missing_selection": 2,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 100,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 100,
+            "extraction_failure": 100,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 100,
+            "both_extractable": 97,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        },
+        "difficulty:gsm8k:not_provided": {
+          "current": {
+            "n": 100,
+            "correct": 85,
+            "accuracy": 0.85,
+            "missing_selection": 2,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "first_box": {
+            "n": 100,
+            "correct": 85,
+            "accuracy": 0.85,
+            "missing_selection": 2,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "last_box": {
+            "n": 100,
+            "correct": 85,
+            "accuracy": 0.85,
+            "missing_selection": 2,
+            "extraction_failure": 3,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "explicit_final": {
+            "n": 100,
+            "correct": 0,
+            "accuracy": 0.0,
+            "missing_selection": 100,
+            "extraction_failure": 100,
+            "grader_error": 0,
+            "gold_unparseable": 0
+          },
+          "transitions": {
+            "n": 100,
+            "both_extractable": 97,
+            "first_correct_last_wrong": 0,
+            "first_wrong_last_correct": 0,
+            "first_correct_last_wrong_both_extractable": 0
+          }
+        }
+      },
+      "saved_current_correctness_disagreements": 0
+    }
+  },
+  "comparisons": {
+    "current": {
+      "A_vs_D": {
+        "n": 400,
+        "delta_accuracy": 0.005,
+        "wrong_to_right": 28,
+        "right_to_wrong": 26,
+        "paired_bootstrap_95": [
+          -0.03,
+          0.04
+        ]
+      },
+      "A_vs_R12": {
+        "n": 400,
+        "delta_accuracy": -0.0075,
+        "wrong_to_right": 32,
+        "right_to_wrong": 35,
+        "paired_bootstrap_95": [
+          -0.05,
+          0.0325
+        ]
+      },
+      "D_vs_R12": {
+        "n": 400,
+        "delta_accuracy": -0.0125,
+        "wrong_to_right": 27,
+        "right_to_wrong": 32,
+        "paired_bootstrap_95": [
+          -0.0525,
+          0.025
+        ]
+      }
+    },
+    "first_box": {
+      "A_vs_D": {
+        "n": 400,
+        "delta_accuracy": 0.02,
+        "wrong_to_right": 27,
+        "right_to_wrong": 19,
+        "paired_bootstrap_95": [
+          -0.0125,
+          0.0525
+        ]
+      },
+      "A_vs_R12": {
+        "n": 400,
+        "delta_accuracy": 0.0075,
+        "wrong_to_right": 31,
+        "right_to_wrong": 28,
+        "paired_bootstrap_95": [
+          -0.0325,
+          0.0475
+        ]
+      },
+      "D_vs_R12": {
+        "n": 400,
+        "delta_accuracy": -0.0125,
+        "wrong_to_right": 22,
+        "right_to_wrong": 27,
+        "paired_bootstrap_95": [
+          -0.0475,
+          0.0225
+        ]
+      }
+    },
+    "last_box": {
+      "A_vs_D": {
+        "n": 400,
+        "delta_accuracy": 0.005,
+        "wrong_to_right": 28,
+        "right_to_wrong": 26,
+        "paired_bootstrap_95": [
+          -0.03,
+          0.04
+        ]
+      },
+      "A_vs_R12": {
+        "n": 400,
+        "delta_accuracy": -0.0075,
+        "wrong_to_right": 32,
+        "right_to_wrong": 35,
+        "paired_bootstrap_95": [
+          -0.05,
+          0.0325
+        ]
+      },
+      "D_vs_R12": {
+        "n": 400,
+        "delta_accuracy": -0.0125,
+        "wrong_to_right": 27,
+        "right_to_wrong": 32,
+        "paired_bootstrap_95": [
+          -0.0525,
+          0.025
+        ]
+      }
+    },
+    "explicit_final": {
+      "A_vs_D": {
+        "n": 400,
+        "delta_accuracy": 0.0,
+        "wrong_to_right": 0,
+        "right_to_wrong": 0,
+        "paired_bootstrap_95": [
+          0.0,
+          0.0
+        ]
+      },
+      "A_vs_R12": {
+        "n": 400,
+        "delta_accuracy": 0.0,
+        "wrong_to_right": 0,
+        "right_to_wrong": 0,
+        "paired_bootstrap_95": [
+          0.0,
+          0.0
+        ]
+      },
+      "D_vs_R12": {
+        "n": 400,
+        "delta_accuracy": 0.0,
+        "wrong_to_right": 0,
+        "right_to_wrong": 0,
+        "paired_bootstrap_95": [
+          0.0,
+          0.0
+        ]
+      }
+    }
+  },
+  "gold_parse_failures": {
+    "prm800k": 1
+  },
+  "note": "Diagnostic extraction policies, not submission scores. Missing/unparseable selections count as incorrect; no oracle selection."
+}
