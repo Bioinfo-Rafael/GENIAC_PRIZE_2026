@@ -19,6 +19,67 @@ One epoch; LR 5e-5; seed42; max sequence2048; paged AdamW8bit; cosine decay; 12 
 
 Epoch-zero data order reconstructs the original Trainer's seeded sampler. Original emitted sampler indices are unavailable, so this is not a bitwise historical replay. The software/GPU differ from the old T4 run; A is a historical control, and small A–C/D differences cannot be attributed exclusively to rank. A's historical training time/VRAM are left blank rather than compared as if measured on Ada.
 
+<a id="training-recipe"></a>
+## 学習レシピ（今回のB・C・D）
+
+これは実装で固定した設定。Aは既存run03を評価しただけで、下記の新規学習を実行していない。
+
+### モデルの作り方
+
+1. `Qwen/Qwen3-4B-Base` のrevision `906bfd4b4dc7f14ee4320094d8b41684abff8539` をFP16で読み込む。
+2. BはこのBaseを親モデルにする。C・Dはrun01の学習済みStage 1（Tulu指示追従SFT）adapterをFP16でmergeし、親モデルにする。Stage 1自体は再学習しない。
+3. 各親モデルをNF4・double quantizationで4bitロードし、**数学SFT用LoRAを新規初期化**する。既存run03の数学adapterからの継続学習ではない。親モデルの重みは固定する。
+4. Bはrank8/alpha16、Cはrank32/alpha64、Dはrank64/alpha128。全条件でalpha/rank=2。LoRA B行列が初期値0であることを検査する。
+
+| 項目 | 固定設定 |
+|---|---|
+| LoRA対象 | `q_proj`, `k_proj`, `v_proj`, `o_proj`, `gate_proj`, `up_proj`, `down_proj` |
+| LoRA dropout / bias | `0.0` / `none` |
+| 学習可能パラメータ数 | B: 16,515,072 / C: 66,060,288 / D: 132,120,576 |
+| 量子化 / 計算dtype | NF4 4bit + double quantization / FP16 |
+| 学習パラメータdtype | FP32（FP16 autocastと動的loss scalingを併用） |
+| epoch / optimizer更新回数 | 1 / 375 |
+| learning rate | `5e-5`（最大値） |
+| 実効batch | 16例 / 更新 |
+| optimizer | bitsandbytes `PagedAdamW8bit` |
+| betas / epsilon / weight decay | `(0.9, 0.999)` / `1e-8` / `0.0` |
+| scheduler | cosine、warmup 12更新（`ceil(375 × 0.03)`） |
+| gradient clipping | global norm `1.0` |
+| seed | `42`（Python / Torch / CUDA、データsampler） |
+| 最大系列長 / packing | 2,048 / なし（右padding） |
+| checkpoint | 25更新ごと、直近2個と最終adapterを保存 |
+
+### 教材とloss
+
+- run03の保存済み `train.jsonl` をそのまま使う。PRM800K 4,500例＋GSM8K 1,500例で、SHA256は `4705f95d44ae723bd65b1a83e24b33a95a3fbf827c5ca07d412fbf1f04a9b261`。今回新たに問題を選別・生成していない。
+- 問題をuser、保存済み解説をassistantとして固定 `chat_template.jinja` で整形する。解説に `\boxed{...}` がなければ、保存済み正解を使って `Therefore, $\boxed{...}$.` を末尾に付ける。末尾がEOSでなければEOSを追加する。
+- cacheはrun03のhash順を検査し、`SeedableRandomSampler(data_seed=42)` のepoch 0の順序で学習する。6,000例を重複なく1回ずつ使い、切詰め・追加フィルタ・長さ順並べ替えを行わない。2,048超過なら停止する。
+- 実データは合計1,598,551トークン、最長1,923トークン。**問題文を含む全ての非paddingトークンのnext-token cross entropy**が対象。assistant-only lossではない。
+- 各系列の先頭には予測元がないため、教師targetは合計1,592,551トークン。各16例の有効target数でlossの総和を割る。microbatchごとのlossをtarget数で重み付けして累積し、microbatch変更でlossの定義が変わらないようにする。
+- AMP overflow時はloss scaleを下げ、同じ16例で再試行する。成功しない更新ではschedulerを進めない。持続する非有限値は停止扱い。
+
+### 高速化設定と再現に必要な記録
+
+backend、attention実装、microbatch、gradient checkpointingは短い速度比較で選び、B・C・Dで共通に固定する。microbatch2なら8回、4なら4回の勾配累積で実効batch16にする。ベンチマークに使ったadapterは破棄し、本学習は改めて初期化する。
+
+**今回共有された最終reportだけでは、採用されたbackend・microbatch・checkpointingを特定できない。** SDPAの成功やFlashAttentionのGLIBCエラーはログで確認済みだが、最終採用方式をそこから断定しない。正確な実行レシピは次の保存ファイルを併せて確認する。
+
+```bash
+RANK_ID="$(cat "$HOME/geniac_math/latest_rank_id.txt")"
+RUN="$HOME/geniac_math/rank_ablation/$RANK_ID"
+cat "$RUN/selected_backend.json"
+cat "$RUN/conditions/B/contract.json"
+cat "$RUN/packages.json"
+```
+
+`selected_backend.json` が共通速度設定、各条件の `contract.json` が設定・入力署名、`packages.json` が実際の学習環境、`data/order.json` が例の順序。実装は `code/` に固定保存される。元run03の実際のsampler出力とソフトウェア環境を完全再現したものではない点は、Aとの比較の限界として残る。
+
+### 最終評価レシピ
+
+最終adapterをFP16の親モデルへmergeし、固定public dev400問（PRM300・GSM100）を評価する。vLLM 0.10.2、Torch 2.8.0、Transformers 4.56.2、math-verify 0.9.0、FP16推論。greedy（temperature0 / top_p1）、1問1回答、最大生成2,048、context4,096、chunk32、GPU memory utilization0.8、seed42を使用する。配布済み固定chat templateと既存採点関数を使う。
+
+Aは設定一致を検査して保存済み回答を再利用するか、既存run03モデルを再推論するだけ。学習途中のcheckpoint評価はせず、回答本文・token IDs・終了理由・正誤を全件保存して、同じ問題の正誤変化とpaired bootstrapを計算する。
+
 ## Short speed selection and separate C/D estimates
 
 A bounded common-backend search runs disposable rank64 warmup/memory checks plus one measured effective update per candidate. This ensures the selected method fits D before B starts. It compares available HF SDPA / FlashAttention / Unsloth, microbatch2/4, and one no-checkpoint candidate. All are 4bit QLoRA. The fastest passing configuration is frozen for B/C/D. A short loss/gradient audit checks reduction semantics. Padding is retained: cross-document packing changes are excluded to minimize validation time and preserve the historical objective.
