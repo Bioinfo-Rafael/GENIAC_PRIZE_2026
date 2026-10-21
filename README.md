@@ -91,6 +91,38 @@ D−Aは+0.50ポイント、paired bootstrap 95%区間は **−3.00〜+4.00ポ�
 
 [数学Curriculumの詳細解析](research/20261021_math_curriculum_submission_audit.md)／[問題別集計CSV](research/20261021_math_curriculum_submission_metrics.csv)／[集計JSON](research/20261021_math_curriculum_submission_metrics.json)／[実行手順・設定](remote/math_curriculum/README.md)。提出原本 `submission_math_curriculum.json` は未編集。以下の実験履歴にある「最高」「現在の取り組み」は当時の状態を示す。
 
+### 数学Curriculumの学習レシピと実測時間（2026-10-21）
+
+RTX 6000 Ada 48GBで1条件を実行。初期モデルは `Qwen/Qwen3-4B-Base`、revisionは `906bfd4b4dc7f14ee4320094d8b41684abff8539`。Tuluや既存run03のadapterは使わず、GSM Stage 1をBaseへmergeした後、新規Stage 2 LoRAを学習し、最後にStage 2をmergeして提出した。
+
+| 項目 | Stage 1：基本数学 | Stage 2：高度な数学 |
+| --- | --- | --- |
+| 教材 | GSM8K 2,000問 | PRM800K＋LIMO、教師トークン目標80:20。GSMなし |
+| 学習量 | 1 epoch、125更新 | 最大30万教師トークン、ログで65更新完了 |
+| LoRA | rank8 / alpha16、新規初期化 | rank8 / alpha16、新規初期化 |
+| 学習率 | 1e-4 | 5e-5 |
+| 最大系列長 | 2,048 | 8,192 |
+| 実効batch | 16（microbatch2、OOM時1） | 16（microbatch1） |
+| loss | promptを含む非padding部分のNLL | promptをmaskした回答＋EOSのみのNLL |
+| 成功更新の時間合計 | **167.97秒（約2分48秒）** | **198.80秒（約3分19秒）** |
+| ピークallocated VRAM | 3.77 GiB | 4.03 GiB |
+
+共通設定はUnsloth、4bit NF4 double quantization、FP16、gradient checkpointing、seed42、LoRA dropout0。対象層はq/k/v/o/gate/up/down projection。AdamW（weight decay 0.01）、cosine scheduler、warmup5%、gradient clipping1を使用した。FlashAttention/xformersはロードできず、受領ログではPyTorch attentionへのfallbackを確認した。
+
+Stage 2は完全な回答・実効batch単位で予算内に収め、LIMO解説を途中で切断しない。ローカル検証では10万側99,678、最終298,233教師トークン（PRM238,379＋LIMO59,854、79.93:20.07）だった。ただしリモートのデータ実績ファイルは未受領であり、この数値をリモート実測値とは扱わない。公開評価は省略し、最終checkpointから単一モデル・greedy・1問1回答・最大生成2,048トークンで提出JSONを生成した。
+
+**確認できた学習成功更新の時間合計は366.77秒（約6分7秒）。全工程の所要時間ではない。** これは添付ログの各成功更新の丸め済み秒数を合計した値で、ロード・保存・merge・AMP overflow再試行などの工程全体を集計していない。初期更新に含まれるコンパイル等の時間も分離していない。Stage 1でAMP overflowが1回発生したが再試行後に完走した。
+
+| 工程 | 確認できた時間・状態 |
+| --- | --- |
+| Stage 1＋Stage 2の成功更新 | 約6分7秒 |
+| データ準備・モデルロード・保存・merge | 工程別の総時間は未確認 |
+| PRM/LIMO公開評価 | 未実施（ユーザー指示で省略） |
+| 最終提出推論 | 232回答の生成完了を確認、所要時間は未確認 |
+| 全工程の経過時間 | 未確認 |
+
+推論時間・全工程時間はリモートrun内の `runtime_summary.json`、`phase_times.jsonl`、`submission/inference_times.json`で確認する。[学習ログ集計](research/20261021_math_curriculum_training_log_metrics.json)／[詳細な実行・再開手順](remote/math_curriculum/README.md)。
+
 ### 実験計画のつながりと読み方
 
 各実験は、**前段の観測結果 → 残った課題・仮説 → 参考文献とデータ → 実行した比較 → 結果と次の判断**の順で読む。計画の根拠となる実験と、重みを引き継ぐ実験は別である。例えばrun04はrun03の結果を踏まえた計画だが、run03の重みへの追加学習ではない。またrun05の結果は不明なので、run06を「run05の結果から決めた」とは記録しない。
