@@ -138,3 +138,7 @@ cat "$RUN/comparison.csv"
 ```bash
 python -m pytest -q remote/rank64_12k/tests remote/math_training/tests/test_submission.py remote/stage1_rank_ablation/tests
 ```
+
+## 原因診断（学習・再推論なし）
+
+[保存済み公開dev・教師token・更新lossのCPU診断](../rank64_diagnostics/README.md)を参照。D/R12の科目別の正誤変化、token配分、checkpoint残存状況を別出力先へ保存する。中間checkpointは直近2個以外が削除される実装なので、失われた地点を再学習で再現しない。公開教材キャッシュでは平均長・領域別target比率はほぼ同じで、全例に末尾EOSがあることを確認済み。リモートの正誤変化・lossログは集計後に解釈する。

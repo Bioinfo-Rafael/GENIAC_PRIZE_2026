@@ -1,0 +1,350 @@
+{
+  "D": {
+    "all": {
+      "length": {
+        "n": 6000,
+        "mean": 266.42516666666666,
+        "min": 41,
+        "max": 1923,
+        "median": 197.0,
+        "p90": 513,
+        "p99": 1082
+      },
+      "targets": 1592551,
+      "target_counts": {
+        "formatting": 54000,
+        "problem": 406613,
+        "explanation": 1028415,
+        "boundary": 6950,
+        "final_box": 38184,
+        "after_final_box": 52389,
+        "eos": 6000
+      },
+      "target_shares": {
+        "problem": 0.25532180759046336,
+        "explanation": 0.6457658184887015,
+        "final_box": 0.023976626180260474,
+        "after_final_box": 0.0328962777330208,
+        "eos": 0.003767540254597812,
+        "formatting": 0.033907862291380306,
+        "boundary": 0.0043640674615757985
+      },
+      "examples_without_box": 0,
+      "eos_count_distribution": {
+        "1": 6000
+      },
+      "examples_with_tokens_after_eos": 0
+    },
+    "dataset:prm800k": {
+      "length": {
+        "n": 4500,
+        "mean": 300.1842222222222,
+        "min": 41,
+        "max": 1923,
+        "median": 228.5,
+        "p90": 583,
+        "p99": 1136
+      },
+      "targets": 1346329,
+      "target_counts": {
+        "formatting": 40500,
+        "problem": 317796,
+        "explanation": 896942,
+        "boundary": 5450,
+        "final_box": 30252,
+        "after_final_box": 50889,
+        "eos": 4500
+      },
+      "target_shares": {
+        "problem": 0.23604631557368222,
+        "explanation": 0.6662130875885464,
+        "final_box": 0.022469990618934895,
+        "after_final_box": 0.0377983390389719,
+        "eos": 0.0033424222459740526,
+        "formatting": 0.030081800213766472,
+        "boundary": 0.00404804472012413
+      },
+      "examples_without_box": 0,
+      "eos_count_distribution": {
+        "1": 4500
+      },
+      "examples_with_tokens_after_eos": 0
+    },
+    "subset:original_6000": {
+      "length": {
+        "n": 6000,
+        "mean": 266.42516666666666,
+        "min": 41,
+        "max": 1923,
+        "median": 197.0,
+        "p90": 513,
+        "p99": 1082
+      },
+      "targets": 1592551,
+      "target_counts": {
+        "formatting": 54000,
+        "problem": 406613,
+        "explanation": 1028415,
+        "boundary": 6950,
+        "final_box": 38184,
+        "after_final_box": 52389,
+        "eos": 6000
+      },
+      "target_shares": {
+        "problem": 0.25532180759046336,
+        "explanation": 0.6457658184887015,
+        "final_box": 0.023976626180260474,
+        "after_final_box": 0.0328962777330208,
+        "eos": 0.003767540254597812,
+        "formatting": 0.033907862291380306,
+        "boundary": 0.0043640674615757985
+      },
+      "examples_without_box": 0,
+      "eos_count_distribution": {
+        "1": 6000
+      },
+      "examples_with_tokens_after_eos": 0
+    },
+    "dataset:gsm8k": {
+      "length": {
+        "n": 1500,
+        "mean": 165.148,
+        "min": 74,
+        "max": 440,
+        "median": 157.0,
+        "p90": 237,
+        "p99": 331
+      },
+      "targets": 246222,
+      "target_counts": {
+        "formatting": 13500,
+        "problem": 88817,
+        "explanation": 131473,
+        "boundary": 1500,
+        "final_box": 7932,
+        "after_final_box": 1500,
+        "eos": 1500
+      },
+      "target_shares": {
+        "problem": 0.3607191883747187,
+        "explanation": 0.5339612219866624,
+        "final_box": 0.03221483051880011,
+        "after_final_box": 0.006092063259984892,
+        "eos": 0.006092063259984892,
+        "formatting": 0.054828569339864026,
+        "boundary": 0.006092063259984892
+      },
+      "examples_without_box": 0,
+      "eos_count_distribution": {
+        "1": 1500
+      },
+      "examples_with_tokens_after_eos": 0
+    },
+    "update_weight_mean": {
+      "problem": 0.2569530820220078,
+      "explanation": 0.642470076213391,
+      "final_box": 0.024622583699149176,
+      "after_final_box": 0.032430245743262455,
+      "eos": 0.0039006630319334537,
+      "formatting": 0.035105967287401084,
+      "boundary": 0.004517382002855483
+    },
+    "cache_sha256": {
+      "tokens.json": "683769c567b067f0d554d29995dd7ba32d3f9a52a362fb2d1bff25e163c1054e",
+      "groups.json": "7c576ed8969aa75a0fc06469e81321f4c8037f17e4bdf4c40c39454530c951a9",
+      "report.json": "c8ce76072ac856654bb1d950ae019b3524eceac72fc50bc99d3c5a43964b64f5"
+    }
+  },
+  "R12": {
+    "all": {
+      "length": {
+        "n": 12000,
+        "mean": 269.62166666666667,
+        "min": 40,
+        "max": 1974,
+        "median": 197.0,
+        "p90": 534,
+        "p99": 1094
+      },
+      "targets": 3223460,
+      "target_counts": {
+        "formatting": 108000,
+        "problem": 832363,
+        "explanation": 2074888,
+        "boundary": 13911,
+        "final_box": 76683,
+        "after_final_box": 105615,
+        "eos": 12000
+      },
+      "target_shares": {
+        "problem": 0.2582203594894927,
+        "explanation": 0.6436834953745354,
+        "final_box": 0.023789034143435934,
+        "after_final_box": 0.03276448288485044,
+        "eos": 0.003722707897724805,
+        "formatting": 0.03350437107952325,
+        "boundary": 0.00431554913043748
+      },
+      "examples_without_box": 0,
+      "eos_count_distribution": {
+        "1": 12000
+      },
+      "examples_with_tokens_after_eos": 0
+    },
+    "dataset:prm800k": {
+      "length": {
+        "n": 9000,
+        "mean": 304.37944444444446,
+        "min": 40,
+        "max": 1974,
+        "median": 229.0,
+        "p90": 605,
+        "p99": 1173
+      },
+      "targets": 2730415,
+      "target_counts": {
+        "formatting": 81000,
+        "problem": 654893,
+        "explanation": 1811198,
+        "boundary": 10911,
+        "final_box": 60798,
+        "after_final_box": 102615,
+        "eos": 9000
+      },
+      "target_shares": {
+        "problem": 0.23985108490833812,
+        "explanation": 0.6633416531919141,
+        "final_box": 0.02226694476846926,
+        "after_final_box": 0.03758219904300262,
+        "eos": 0.0032962022256689916,
+        "formatting": 0.029665820031020924,
+        "boundary": 0.003996095831586041
+      },
+      "examples_without_box": 0,
+      "eos_count_distribution": {
+        "1": 9000
+      },
+      "examples_with_tokens_after_eos": 0
+    },
+    "subset:added_6000": {
+      "length": {
+        "n": 6000,
+        "mean": 272.8181666666667,
+        "min": 40,
+        "max": 1974,
+        "median": 198.0,
+        "p90": 551,
+        "p99": 1103
+      },
+      "targets": 1630909,
+      "target_counts": {
+        "formatting": 54000,
+        "problem": 425750,
+        "explanation": 1046473,
+        "boundary": 6961,
+        "final_box": 38499,
+        "after_final_box": 53226,
+        "eos": 6000
+      },
+      "target_shares": {
+        "problem": 0.2610507391890044,
+        "explanation": 0.6416501472491721,
+        "final_box": 0.02360585415863178,
+        "after_final_box": 0.032635787772340455,
+        "eos": 0.003678929970954848,
+        "formatting": 0.03311036973859363,
+        "boundary": 0.004268171921302783
+      },
+      "examples_without_box": 0,
+      "eos_count_distribution": {
+        "1": 6000
+      },
+      "examples_with_tokens_after_eos": 0
+    },
+    "subset:original_6000": {
+      "length": {
+        "n": 6000,
+        "mean": 266.42516666666666,
+        "min": 41,
+        "max": 1923,
+        "median": 197.0,
+        "p90": 513,
+        "p99": 1082
+      },
+      "targets": 1592551,
+      "target_counts": {
+        "formatting": 54000,
+        "problem": 406613,
+        "explanation": 1028415,
+        "boundary": 6950,
+        "final_box": 38184,
+        "after_final_box": 52389,
+        "eos": 6000
+      },
+      "target_shares": {
+        "problem": 0.25532180759046336,
+        "explanation": 0.6457658184887015,
+        "final_box": 0.023976626180260474,
+        "after_final_box": 0.0328962777330208,
+        "eos": 0.003767540254597812,
+        "formatting": 0.033907862291380306,
+        "boundary": 0.0043640674615757985
+      },
+      "examples_without_box": 0,
+      "eos_count_distribution": {
+        "1": 6000
+      },
+      "examples_with_tokens_after_eos": 0
+    },
+    "dataset:gsm8k": {
+      "length": {
+        "n": 3000,
+        "mean": 165.34833333333333,
+        "min": 74,
+        "max": 440,
+        "median": 156.0,
+        "p90": 238,
+        "p99": 335
+      },
+      "targets": 493045,
+      "target_counts": {
+        "formatting": 27000,
+        "problem": 177470,
+        "explanation": 263690,
+        "boundary": 3000,
+        "final_box": 15885,
+        "after_final_box": 3000,
+        "eos": 3000
+      },
+      "target_shares": {
+        "problem": 0.3599468608342038,
+        "explanation": 0.534819336977355,
+        "final_box": 0.03221815452950542,
+        "after_final_box": 0.006084637304911316,
+        "eos": 0.006084637304911316,
+        "formatting": 0.054761735744201845,
+        "boundary": 0.006084637304911316
+      },
+      "examples_without_box": 0,
+      "eos_count_distribution": {
+        "1": 3000
+      },
+      "examples_with_tokens_after_eos": 0
+    },
+    "update_weight_mean": {
+      "problem": 0.25974481161196833,
+      "explanation": 0.6410869324052867,
+      "final_box": 0.024515740354256788,
+      "after_final_box": 0.031628680742998586,
+      "eos": 0.0038558336434019545,
+      "formatting": 0.0347025027906176,
+      "boundary": 0.004465498451470628
+    },
+    "cache_sha256": {
+      "tokens.json": "7b796eac3e77296a311576d6e90d0e730ee2db43245dcadc2a415ef8ea4a61e4",
+      "groups.json": "34d1ea1b3c49c4e49f5da2b016037bada4b6861f20e1fd9218b75168033ba1e2",
+      "report.json": "b7044914d54bedf552ce7055cdf01d8f05bba14985eebab9b4ace057890379e4"
+    }
+  },
+  "scope": "Public teacher caches created during implementation preflight; not remote training logs or official competition inputs. Counts are target weights, not measured NLL or gradients."
+}
