@@ -1,0 +1,109 @@
+{
+  "source": "saved public token pool, local validation only; remote hashes must be checked",
+  "pool": 10919,
+  "report": {
+    "target_cumulative_questions": 10000,
+    "existing": {
+      "questions": 3000,
+      "questions_by_source": {
+        "limo": 40,
+        "prm800k": 2960
+      },
+      "teacher_tokens": 844566,
+      "teacher_tokens_by_source": {
+        "limo": 170348,
+        "prm800k": 674218
+      },
+      "teacher_token_ratio": {
+        "prm800k": 0.7983011392833715,
+        "limo": 0.20169886071662843
+      }
+    },
+    "additional": {
+      "questions": 7000,
+      "questions_by_source": {
+        "prm800k": 6917,
+        "limo": 83
+      },
+      "teacher_tokens": 1908593,
+      "teacher_tokens_by_source": {
+        "prm800k": 1528408,
+        "limo": 380185
+      },
+      "teacher_token_ratio": {
+        "prm800k": 0.8008035238523876,
+        "limo": 0.1991964761476124
+      }
+    },
+    "cumulative": {
+      "questions": 10000,
+      "questions_by_source": {
+        "limo": 123,
+        "prm800k": 9877
+      },
+      "teacher_tokens": 2753159,
+      "teacher_tokens_by_source": {
+        "limo": 550533,
+        "prm800k": 2202626
+      },
+      "teacher_token_ratio": {
+        "prm800k": 0.8000358860494435,
+        "limo": 0.19996411395055644
+      }
+    },
+    "shortfall": 0,
+    "unused_pool_by_source": {
+      "prm800k": 7536,
+      "limo": 383
+    },
+    "remaining_pool_by_source": {
+      "prm800k": 619,
+      "limo": 300
+    },
+    "final_update_examples": 8,
+    "mixture_policy": "Choose the next seeded source head closest to cumulative 80:20 teacher tokens; never repeat; use PRM when LIMO exhausted",
+    "limo_exhausted": false
+  },
+  "counts_6000": {
+    "questions": 6000,
+    "questions_by_source": {
+      "limo": 75,
+      "prm800k": 5925
+    },
+    "teacher_tokens": 1658842,
+    "teacher_tokens_by_source": {
+      "limo": 330920,
+      "prm800k": 1327922
+    },
+    "teacher_token_ratio": {
+      "prm800k": 0.8005114411137408,
+      "limo": 0.19948855888625922
+    }
+  },
+  "counts_final": {
+    "questions": 10000,
+    "questions_by_source": {
+      "limo": 123,
+      "prm800k": 9877
+    },
+    "teacher_tokens": 2753159,
+    "teacher_tokens_by_source": {
+      "limo": 550533,
+      "prm800k": 2202626
+    },
+    "teacher_token_ratio": {
+      "prm800k": 0.8000358860494435,
+      "limo": 0.19996411395055644
+    }
+  },
+  "r8_steps": {
+    "R8_6k": 188,
+    "R8_10k": 438
+  },
+  "r32_steps": {
+    "warmup1040": 65,
+    "history3000": 188,
+    "R32_6k": 376,
+    "R32_10k": 626
+  }
+}

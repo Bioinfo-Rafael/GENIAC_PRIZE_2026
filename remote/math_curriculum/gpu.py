@@ -5,7 +5,7 @@ import signal
 from common import *
 
 
-def train(root, stage, until=None):
+def train(root, stage, until=None, recipe=None):
     # Must precede transformers/peft imports. Do not request full 8k vocabulary logits.
     os.environ['UNSLOTH_RETURN_LOGITS']='0'
     from unsloth import FastLanguageModel
@@ -20,6 +20,11 @@ def train(root, stage, until=None):
         context=2048 if stage=='stage1' else 8192, published_schedule=True,
         save_milestones=True, checkpoint_at_milestones=True, checkpoint_every=10,
         auto_oom_microbatch=True)
+    if recipe is not None:
+        if stage != 'stage2': raise ValueError('Suite overrides are Stage 2 only')
+        allowed = {'learning_rate', 'lora_rank', 'lora_alpha', 'lr_policy'}
+        if set(recipe) - allowed: raise ValueError('Unsupported suite recipe')
+        cfg.update(recipe)
     continuation=read(root/'continuation.json') if (root/'continuation.json').exists() else None
     if continuation:
         if stage!='stage2': raise ValueError('Continuation must never retrain Stage 1')
@@ -37,7 +42,7 @@ def train(root, stage, until=None):
             dtype=torch.float16,load_in_4bit=True,use_exact_model_name=True,**kwargs)
         expected=worker.tokenizer_for(root/'tokenizer/stage2')
         if tok.get_vocab()!=expected.get_vocab(): raise ValueError('Tokenizer vocabulary changed')
-        model=FastLanguageModel.get_peft_model(model,r=8,lora_alpha=16,lora_dropout=0,bias='none',
+        model=FastLanguageModel.get_peft_model(model,r=cfg.get('lora_rank',8),lora_alpha=cfg.get('lora_alpha',16),lora_dropout=0,bias='none',
             target_modules=['q_proj','k_proj','v_proj','o_proj','gate_proj','up_proj','down_proj'],
             random_state=SEED,use_gradient_checkpointing='unsloth')
         if adapter is None and continuation:
@@ -56,8 +61,8 @@ def train(root, stage, until=None):
                 raise ValueError('Expected a newly initialized adapter')
         for parameter in model.parameters():
             if parameter.requires_grad: parameter.data=parameter.data.float()
-        if sum(p.numel() for p in model.parameters() if p.requires_grad)!=16515072:
-            raise ValueError('Unexpected rank8 trainable parameter count')
+        if sum(p.numel() for p in model.parameters() if p.requires_grad)!=16515072*cfg.get('lora_rank',8)//8:
+            raise ValueError('Unexpected trainable parameter count')
         model.config.pad_token_id=expected.pad_token_id
         model.config.eos_token_id=expected.eos_token_id
         model.config.use_cache=False
