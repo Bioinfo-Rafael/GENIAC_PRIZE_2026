@@ -103,7 +103,7 @@ class AccuracySuite(Suite):
         table = self.summary.setdefault('trials' if split == 'dev' else split+'_evaluations', {})
         if table.get(name, {}).get('status') == 'complete':
             return table[name]
-        rows = {'dev': self.dev, 'confirmation': self.confirmation, 'final': self.final}[split]
+        rows = getattr(self, {'dev': 'dev', 'confirmation': 'confirmation', 'final': 'final'}[split])
         base = self.baseline(split, rows)
         root = self.root/'evaluations'/split/name
         self.share_models(root)

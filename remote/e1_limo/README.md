@@ -79,3 +79,23 @@ bash -n remote/e1_limo/launch.sh
 ```
 
 混合トークン・全回答保持・prompt mask・二地点だけの保存計画・容量不足拒否・選択/採用境界・独立評価前の選択凍結・再開順序をCPUで検証。実際のGPU通し実行はリモートコマンドで行う。
+
+## 学習済みE1-600kから直接提出JSONを生成する
+
+ユーザー指示で評価・採用判定を省く場合に使用する。完成済み60万トークンのadapterと元コードのhashを検証し、学習・dev・独立評価を実行せず、E1-600kを統合して運営形式で生成・チェックする。run03より改善したという判定は行わない。元の実験コードsnapshotや選択記録は変更しない。
+
+`confirmation`属性がないことによる学習後のdev評価エラーで停止した既存runにも使える。既存runは古いsnapshotで動くので、単なるpullではそのエラーは直らない。この専用コマンドは完成済み学習を直接読み込んで回避する。
+
+```bash
+(
+  set -e
+  cd "$HOME/geniac-remote"
+  git pull --ff-only origin main
+  nohup bash remote/e1_limo/launch_direct_submission.sh \
+    "$HOME/geniac_math/suites/e1_limo_600k_v1" \
+    >> "$HOME/geniac_math/e1_limo_600k_v1.direct_submission.console.log" 2>&1 < /dev/null &
+  echo "PID=$!"
+)
+```
+
+同じコマンドで再開可能。学習未完了や他GPUジョブ実行中は拒否する。提出ファイルは`~/geniac_math/suites/e1_limo_600k_v1/direct_submission/submission.json`。生成進捗は同じディレクトリの`generate.log`、形式検査は`format_check.json`、実行状態は`report.json`。Omnicampusには送信しない。
