@@ -841,3 +841,12 @@ ZIP の CRC と展開ファイルのバイト一致は全件成功。展開原�
 この結果を受け、**DFTを試す前に、終了トークン・実際の学習labels・反復の診断を優先するよう計画を更新しました。** 全体の得点低下の何割が反復によるものかは、問題別の採点結果がないため未確定です。
 
 具体例と検算は[比較ノート](/Users/cls-lab/Git/MatsuoLecture/GENIAC_PRIZE_2026/research/20261015_run03_run04_run06_output_audit.md)に保存しました。
+
+
+## 公開dev抽出診断と独立公開評価セット（2026-10-21）
+
+新規学習前の診断として、[public_eval_diagnostics](remote/public_eval_diagnostics/README.md) を追加した。保存済みA・D・R12の同一dev400回答を、Current / First box / Last box / Explicit finalの固定規則で再採点し、抽出失敗・正答から誤答への変化・分野/難易度/生成長別の性能を集計する。正解に応じた抽出方法の選択や提出出力の加工は行わない。
+
+併せて、固定したPRM/GSM公開testから既知の数学学習データ全体・既存dev/finalとの重複を機械的に除外し、分野×難易度を層化した新しい公開400問（PRM300+GSM100）を保存する。Stage 1・事前学習からの完全な独立や本番分布の代表性は保証しない。実データで400問の確保と正解ラベルの解析成功を確認済み。A/D/R12の実回答の診断結果はリモート実行後に生成されるREADME/CSV/JSONを確認する。
+
+この段階はCPUのみで、学習・再推論・NLL forwardを起動しない。[pullからバックグラウンド実行・再開・結果確認までのコマンド](remote/public_eval_diagnostics/README.md#実行再開)を参照。
