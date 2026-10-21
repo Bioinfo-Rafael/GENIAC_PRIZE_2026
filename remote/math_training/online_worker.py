@@ -16,12 +16,17 @@ from accuracy_utils import advantages, online_groups, rollout_tokens
 import worker
 
 
-def policy_objective(sequence_logps, token_counts, group_advantages, divisor):
-    """Equal weight per completion; advantages are constants, not model rewards."""
+def policy_objective(sequence_logps, token_counts, group_advantages, divisor, fixed_length=None):
+    """Legacy per-response mean, or fixed-length Dr.-inspired normalization.
+
+    E2/E3 opts in; other suites retain reward-std and response-length scaling.
+    This remains one on-policy REINFORCE update, without PPO clipping or KL.
+    """
     import torch
     adv = torch.as_tensor(group_advantages, device=sequence_logps.device,
                           dtype=sequence_logps.dtype)
-    return -(sequence_logps/token_counts.clamp_min(1)*adv).sum()/divisor
+    denominator = fixed_length if fixed_length is not None else token_counts.clamp_min(1)
+    return -(sequence_logps/denominator*adv).sum()/divisor
 
 
 def train(ctx, until):
@@ -42,7 +47,9 @@ def train(ctx, until):
     write(root/'reward_audit.json', {'gold_parse_failures': failures, 'usable': len(usable),
           'reward': 'final-answer correctness; no length/stop/format bonus',
           'policy': 'full-softmax temperature1 top_p1 top_k0; no dropout; same quantized policy',
-          'objective': 'group-normalized REINFORCE, one update per rollout batch; beta=0'})
+          'objective': ('mean-centered REINFORCE, fixed max_tokens normalization; Dr. GRPO-inspired, not a full reproduction'
+                        if cfg.get('dr_normalization') else
+                        'group-normalized REINFORCE, one update per rollout batch; beta=0')})
     if not usable:
         raise ValueError('No parseable reward targets')
     seed = cfg['seed']
@@ -132,7 +139,8 @@ def train(ctx, until):
                     rewards.append(reward)
                     samples.append({'tokens': tokens, 'text': text, 'grade': result,
                                     'finish_reason': 'stop' if tok.eos_token_id in ids else 'length'})
-            adv = advantages(rewards)
+            adv = ([r-sum(rewards)/len(rewards) for r in rewards]
+                   if cfg.get('dr_normalization') else advantages(rewards))
             all_rewards.extend(rewards)
             raw[row['id']] = samples
             if any(a != 0 for a in adv):
@@ -152,7 +160,8 @@ def train(ctx, until):
                     values, counts = worker.logps(model, tok, [tokens], getattr(torch, cfg['dtype']))
                     # Include zero-advantage groups in the denominator.
                     divisor = len(raw)*cfg['online_generations']
-                    loss = policy_objective(values, counts, [adv], divisor)
+                    loss = policy_objective(values, counts, [adv], divisor,
+                        fixed_length=cfg['max_tokens'] if cfg.get('dr_normalization') else None)
                     if not torch.isfinite(loss):
                         raise FloatingPointError('Nonfinite online loss')
                     scaler.scale(loss).backward()
@@ -169,6 +178,11 @@ def train(ctx, until):
         record = {'round': step, 'optimizer_updates': updates, 'variable_groups': variable_groups,
                   'reward_mean': sum(all_rewards)/len(all_rewards) if all_rewards else None,
                   'sample_count': len(all_rewards), 'loss': loss_value,
+                  'rewards': all_rewards,
+                  'generation_lengths': [sum(x != -100 for x in s['tokens']['labels'])
+                                         for samples in raw.values() for s in samples],
+                  'optimizer_updates_this_round': int(bool(records)),
+                  'peak_vram_bytes': torch.cuda.max_memory_allocated(),
                   'sample_batch': sample_batch,
                   'seconds': time.monotonic()-started}
         write(dest/f'round_metrics/{step:05d}.json', record)
