@@ -36,7 +36,13 @@ done
 export HF_HOME="${HF_HOME:-$MC_WORKSPACE/hf_cache}"
 export HF_HUB_DISABLE_TELEMETRY=1 TOKENIZERS_PARALLELISM=false
 if [[ -n "$MC_SOURCE_ID" ]]; then
-  exec "$MC_TRAIN" -u "$MC_ROOT/code/math_curriculum/run.py" --root "$MC_ROOT" \
+  mkdir -p "$MC_ROOT/control_continuation_first"
+  if [[ ! -f "$MC_ROOT/control_continuation_first/run.py" ]]; then
+    cp "$MC_HERE/run.py" "$MC_ROOT/control_continuation_first/run.py.partial"
+    mv "$MC_ROOT/control_continuation_first/run.py.partial" "$MC_ROOT/control_continuation_first/run.py"
+  fi
+  export PYTHONPATH="$MC_ROOT/code/math_curriculum${PYTHONPATH:+:$PYTHONPATH}"
+  exec "$MC_TRAIN" -u "$MC_ROOT/control_continuation_first/run.py" --root "$MC_ROOT" --continuation-submit-first \
     --continue-from "$MC_WORKSPACE/math_curriculum/$MC_SOURCE_ID" \
     --eval-python "$MC_EVAL" --data-python "$MC_DATA"
 fi

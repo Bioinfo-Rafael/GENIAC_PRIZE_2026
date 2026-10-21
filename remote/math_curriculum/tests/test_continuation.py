@@ -167,7 +167,8 @@ def test_baseline_reuse_requires_identical_contract(tmp_path,monkeypatch,compati
     assert calls==['300000'] and fingerprint(source)==before
 
 
-def test_continuation_pipeline_failure_resume_compare_and_source_unchanged(tmp_path,monkeypatch):
+@pytest.mark.parametrize('submit_first,resume_first',[(False,False),(True,True),(False,True)])
+def test_continuation_pipeline_failure_resume_compare_and_source_unchanged(tmp_path,monkeypatch,submit_first,resume_first):
     import importlib.util
     spec=importlib.util.spec_from_file_location('continuation_runner',HERE/'run.py')
     runner=importlib.util.module_from_spec(spec);spec.loader.exec_module(runner)
@@ -209,10 +210,13 @@ def test_continuation_pipeline_failure_resume_compare_and_source_unchanged(tmp_p
                 write(root/'submission/inference_times.json',[])
         def poll(self):return self.returncode
     monkeypatch.setattr(runner.subprocess,'Popen',Process)
-    a=SimpleNamespace(root=root,continue_from=source,eval_python='eval',data_python='data')
+    a=SimpleNamespace(root=root,continue_from=source,eval_python='eval',data_python='data',continuation_submit_first=submit_first)
     with pytest.raises(RuntimeError,match='eval_cumulative3000'):runner.run(a)
-    assert not (root/'selection.json').exists() and not (root/'submission').exists()
-    mark=len(calls);fail['value']=False;runner.run(a)
+    assert (root/'selection.json').exists()==submit_first
+    assert (root/'submission/submission.json').exists()==submit_first
+    if submit_first:
+        assert next(i for i,(s,args) in enumerate(calls) if s=='submit.py') < next(i for i,(s,args) in enumerate(calls) if 'baseline' in args)
+    mark=len(calls);fail['value']=False;a.continuation_submit_first=resume_first;runner.run(a)
     assert all(s!='gpu.py' for s,args in calls[mark:])
     assert not any('baseline' in args for s,args in calls[mark:])
     assert read(root/'selection.json')['candidate']==c.NAME

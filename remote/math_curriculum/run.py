@@ -38,6 +38,7 @@ def run(a):
     root=a.root.resolve();root.mkdir(parents=True,exist_ok=True)
     source=getattr(a,'continue_from',None)
     continuation=source is not None
+    continuation_first=continuation and getattr(a,'continuation_submit_first',False)
     if continuation:
         source=source.resolve()
         if source==root or source in root.parents or root in source.parents:
@@ -117,6 +118,11 @@ def run(a):
             if not path.exists(): raise ValueError('Missing phase artifact: '+name)
             paths.extend(sorted(p for p in path.rglob('*') if p.is_file()) if path.is_dir() else [path])
         write(receipt,dict(files={str(p.relative_to(root)):sha(p) for p in paths},timing=timing))
+    def submission_phases():
+        phase('submission_fetch','submit.py',['fetch'],a.data_python,outputs=['submission/question_identity.json'],private=True)
+        phase('submission_generate','submit.py',['generate'],a.eval_python,
+              outputs=['submission/submission.json','submission/format_check.json','submission/hashes.json',
+                       'submission/manifest.json','submission/complete.json','submission/inference_times.json'],private=True)
     try:
         if continuation:
             from continuation import NAME
@@ -126,6 +132,13 @@ def run(a):
             phase('stage2_'+NAME,'gpu.py',['train','--stage','stage2'],
                 outputs=['stage2/training/rft/final','stage2/training/rft/complete.json'])
             phase('merge_'+NAME,'gpu.py',['merge','--stage','stage2','--milestone',NAME],outputs=['models/'+NAME])
+            if continuation_first:
+                # Match the frozen continuation.report decision exactly, so its
+                # later comparison cannot alter the submission manifest/signature.
+                decision=dict(candidate=NAME,rule='Compare accuracy; submit continued model as requested, irrespective of score. No official inputs used.')
+                immutable_json(root/'selection.json',decision)
+                submission_phases()
+                print('SUBMISSION_READY_BEFORE_EVALUATION',root/'submission/submission.json',flush=True)
             phase('eval_300000','continuation.py',['baseline'],a.eval_python,
                 outputs=['evaluations/300000/metrics.json','evaluations/300000/generations/b0_eval.json',
                          'evaluations/300000/contract.json'])
@@ -153,10 +166,7 @@ def run(a):
                 print('PUBLIC_EVALUATION_SKIPPED selected='+decision['candidate'],flush=True)
             else:
                 phase('select','evaluate.py',python=a.eval_python,outputs=['selection.json','question_changes.json','report.json'])
-        phase('submission_fetch','submit.py',['fetch'],a.data_python,outputs=['submission/question_identity.json'],private=True)
-        phase('submission_generate','submit.py',['generate'],a.eval_python,
-              outputs=['submission/submission.json','submission/format_check.json','submission/hashes.json',
-                       'submission/manifest.json','submission/complete.json','submission/inference_times.json'],private=True)
+        submission_phases()
         timings=jsonl(root/'phase_times.jsonl')
         training={s:jsonl(root/s/'training/rft/train.jsonl') for s in (('stage2',) if continuation else ('stage1','stage2'))}
         training_summary={s:dict(seconds=sum(x.get('seconds',0) for x in updates),
@@ -185,6 +195,7 @@ def run(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--root',type=Path,required=True)
     p.add_argument('--eval-python',required=True);p.add_argument('--data-python',required=True)
+    p.add_argument('--continuation-submit-first',action='store_true',help='Generate continued-model submission before public comparison')
     p.add_argument('--continue-from',type=Path,help='Read-only completed 300k run; continue to cumulative 3000 questions')
     p.add_argument('--evaluate-checkpoints',dest='submission_first',action='store_false',
                    help='Optional original public-evaluation workflow; default skips it')

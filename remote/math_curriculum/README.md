@@ -7,11 +7,11 @@
 
 ## 追加実験：Stage 2累計3,000問へ継続（2026-10-21）
 
-既存の `math_curriculum_20261021_v1` の300k adapterを引き継ぐ。**Stage 1の再学習・再mergeは行わない。** 既存runのモデル・checkpoint・提出JSONには書き込まず、新run `math_curriculum_20261021_3000_v1` に保存する。今回の経路は、下記の初回実験用「評価省略」経路と異なり、**既存300kと継続後の2モデルを固定PRM/LIMO評価セットで比較した後、継続後モデルの提出JSONを生成**する。評価結果にかかわらず継続後モデルを提出用に出力するという依頼に従い、別モデルは学習しない。
+既存の `math_curriculum_20261021_v1` の300k adapterを引き継ぐ。**Stage 1の再学習・再mergeは行わない。** 既存runのモデル・checkpoint・提出JSONには書き込まず、新run `math_curriculum_20261021_3000_v1` に保存する。今回の経路は、下記の初回実験用「評価省略」経路と異なり、**継続後モデルの提出JSONを先に生成し、その後に既存300kと継続後の2モデルを固定PRM/LIMO評価セットで比較**する。評価結果にかかわらず継続後モデルを提出用に出力するという依頼に従い、別モデルは学習しない。
 
 ### 起動・途中再開
 
-リモートで以下を実行する。最後のスクリプトが `nohup` でバックグラウンド起動し、PIDとログ先を表示する。既存venv・HFキャッシュを使用し、pip installは行わない。同じコマンド・同じrun IDで途中再開できる。実行中の重複起動は既存共有lockで拒否される。
+リモートで以下を実行する。最後のスクリプトが同じrunの旧coordinatorだけをSIGTERMで停止し、終了を待ってから `nohup` でバックグラウンド再開し、PIDとログ先を表示する。学習・merge完了済みなら再実行せず、提出JSONを優先する。既に新coordinatorが実行中ならそのまま継続する。既存venv・HFキャッシュを使用し、pip installは行わない。同じコマンド・同じrun IDで途中再開できる。別runの実行中は既存共有lockで拒否される。
 
 ```bash
 (
@@ -83,9 +83,11 @@ cat "$MC_OUT/submission/format_check.json"
 | `submission/submission.json` | 継続後モデルの未編集提出JSON |
 | `submission/{format_check,hashes,manifest}.json` | 公式形式検査・SHA256・モデル/tokenizer/設定・出自 |
 
-元runの `models/stage1` と `models/300000` は読み取り参照し、新runではStage 2最終mergeだけを行う。新run名・`cumulative3000` は目標名で、不足時は `report.json` の実件数を正とする。公式提出処理は `math_training/submission.py` と既存wrapperを使用し、単一モデル・greedy・1問1回答、出力無編集、Omnicampus送信なし。公開評価比較の完了前には本番入力を取得しない。
+元runの `models/stage1` と `models/300000` は読み取り参照し、新runではStage 2最終mergeだけを行う。新run名・`cumulative3000` は目標名で、不足時は `report.json` の実件数を正とする。公式提出処理は `math_training/submission.py` と既存wrapperを使用し、単一モデル・greedy・1問1回答、出力無編集、Omnicampus送信なし。提出対象は評価結果と無関係に継続後モデルへ固定し、公式入力は提出処理だけに渡す。提出JSON生成後に公開評価を行い、本番入力・生成回答を学習・公開評価・モデル選択へ流用しない。
 
 ローカルでは継続専用・既存Curriculum・共通loss/提出/scheduleの計51テストを通過。使用済みID除外、端数batch、教材不足、初期LoRA/再開LoRAの読み分け、評価cache一致条件、失敗後のphase再開、元run不変、継続モデルからの無編集JSON生成を検証した。シェル構文・Python構文・差分形式も検査済み。
+
+実行順変更は `control_continuation_first/run.py` へ別保存し、既存runの `code/` snapshot・学習署名・checkpointは変更しない。提出JSON完成時には `SUBMISSION_READY_BEFORE_EVALUATION` と表示する。その後の評価中でも `submission/submission.json` をダウンロードできる。
 
 実装は既存runnerへの継続分岐、既存GPU loaderへの初期adapter指定、件数ベースの追加schedule作成が中心。共通学習・checkpoint・grader・公式提出エンジンは変更していない。GPU実行・新しい正答率・提出スコアはリモート実行後に記録する。
 
