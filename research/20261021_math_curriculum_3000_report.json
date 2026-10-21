@@ -1,0 +1,278 @@
+{
+  "metrics": {
+    "300000": {
+      "n": 400,
+      "correct": 102,
+      "correct_and_stop": 102,
+      "accuracy": 0.255,
+      "repeated": 55,
+      "repetition_rate": 0.1375,
+      "non_stop": 62,
+      "non_stop_rate": 0.155,
+      "unknown": 82,
+      "mean_output_tokens": 542.4675,
+      "by_dataset": {
+        "prm800k": {
+          "n": 200,
+          "correct": 94,
+          "accuracy": 0.47,
+          "wilson95": [
+            0.402047548732656,
+            0.5390831708499798
+          ],
+          "gold_unparseable_count": 0,
+          "gradable_n": 200,
+          "gradable_accuracy": 0.47,
+          "extraction_failure_rate": 0.17,
+          "length_stop_rate": 0.09,
+          "grader_error_count": 0,
+          "completion_tokens_mean": 347.81,
+          "completion_tokens_p95": 2048,
+          "answer_methods": {
+            "last_boxed": 200
+          },
+          "finish_reasons": {
+            "stop": 182,
+            "length": 18
+          }
+        },
+        "limo": {
+          "n": 200,
+          "correct": 8,
+          "accuracy": 0.04,
+          "wilson95": [
+            0.020405632066152677,
+            0.07693206820093164
+          ],
+          "gold_unparseable_count": 0,
+          "gradable_n": 200,
+          "gradable_accuracy": 0.04,
+          "extraction_failure_rate": 0.24,
+          "length_stop_rate": 0.22,
+          "grader_error_count": 0,
+          "completion_tokens_mean": 737.125,
+          "completion_tokens_p95": 2048,
+          "answer_methods": {
+            "last_boxed": 200
+          },
+          "finish_reasons": {
+            "length": 44,
+            "stop": 156
+          }
+        }
+      },
+      "wilson95": [
+        0.21475670087939003,
+        0.29990432334441497
+      ],
+      "gold_unparseable_count": 0,
+      "gradable_n": 400,
+      "gradable_accuracy": 0.255,
+      "extraction_failure_rate": 0.205,
+      "length_stop_rate": 0.155,
+      "grader_error_count": 0,
+      "completion_tokens_mean": 542.4675,
+      "completion_tokens_p95": 2048,
+      "answer_methods": {
+        "last_boxed": 400
+      },
+      "finish_reasons": {
+        "length": 62,
+        "stop": 338
+      },
+      "extraction_failed_count": 82,
+      "ungradable_count": 0,
+      "max_tokens_reached_rate": 0.155
+    },
+    "cumulative3000": {
+      "n": 400,
+      "correct": 105,
+      "correct_and_stop": 105,
+      "accuracy": 0.2625,
+      "repeated": 55,
+      "repetition_rate": 0.1375,
+      "non_stop": 57,
+      "non_stop_rate": 0.1425,
+      "unknown": 75,
+      "mean_output_tokens": 529.6325,
+      "by_dataset": {
+        "prm800k": {
+          "n": 200,
+          "correct": 98,
+          "accuracy": 0.49,
+          "wilson95": [
+            0.4215627833121336,
+            0.5588141232154117
+          ],
+          "gold_unparseable_count": 0,
+          "gradable_n": 200,
+          "gradable_accuracy": 0.49,
+          "extraction_failure_rate": 0.16,
+          "length_stop_rate": 0.1,
+          "grader_error_count": 0,
+          "completion_tokens_mean": 357.97,
+          "completion_tokens_p95": 2048,
+          "answer_methods": {
+            "last_boxed": 200
+          },
+          "finish_reasons": {
+            "stop": 180,
+            "length": 20
+          }
+        },
+        "limo": {
+          "n": 200,
+          "correct": 7,
+          "accuracy": 0.035,
+          "wilson95": [
+            0.01705554200856752,
+            0.07047061152228945
+          ],
+          "gold_unparseable_count": 0,
+          "gradable_n": 200,
+          "gradable_accuracy": 0.035,
+          "extraction_failure_rate": 0.215,
+          "length_stop_rate": 0.185,
+          "grader_error_count": 0,
+          "completion_tokens_mean": 701.295,
+          "completion_tokens_p95": 2048,
+          "answer_methods": {
+            "last_boxed": 200
+          },
+          "finish_reasons": {
+            "stop": 163,
+            "length": 37
+          }
+        }
+      },
+      "wilson95": [
+        0.22178679994488482,
+        0.3077315398639058
+      ],
+      "gold_unparseable_count": 0,
+      "gradable_n": 400,
+      "gradable_accuracy": 0.2625,
+      "extraction_failure_rate": 0.1875,
+      "length_stop_rate": 0.1425,
+      "grader_error_count": 0,
+      "completion_tokens_mean": 529.6325,
+      "completion_tokens_p95": 2048,
+      "answer_methods": {
+        "last_boxed": 400
+      },
+      "finish_reasons": {
+        "stop": 343,
+        "length": 57
+      },
+      "extraction_failed_count": 75,
+      "ungradable_count": 0,
+      "max_tokens_reached_rate": 0.1425
+    }
+  },
+  "comparison": {
+    "n": 400,
+    "delta_accuracy": 0.0075,
+    "wrong_to_right": 9,
+    "right_to_wrong": 6,
+    "paired_bootstrap_95": [
+      -0.0125,
+      0.0275
+    ]
+  },
+  "submission_candidate": "cumulative3000",
+  "data": {
+    "target_cumulative_questions": 3000,
+    "existing": {
+      "questions": 1040,
+      "questions_by_source": {
+        "limo": 15,
+        "prm800k": 1025
+      },
+      "teacher_tokens": 298233,
+      "teacher_tokens_by_source": {
+        "limo": 59854,
+        "prm800k": 238379
+      },
+      "teacher_token_ratio": {
+        "prm800k": 0.7993045705874267,
+        "limo": 0.2006954294125734
+      }
+    },
+    "additional": {
+      "questions": 1960,
+      "questions_by_source": {
+        "prm800k": 1935,
+        "limo": 25
+      },
+      "teacher_tokens": 546333,
+      "teacher_tokens_by_source": {
+        "prm800k": 435839,
+        "limo": 110494
+      },
+      "teacher_token_ratio": {
+        "prm800k": 0.7977533848403813,
+        "limo": 0.20224661515961878
+      }
+    },
+    "cumulative": {
+      "questions": 3000,
+      "questions_by_source": {
+        "limo": 40,
+        "prm800k": 2960
+      },
+      "teacher_tokens": 844566,
+      "teacher_tokens_by_source": {
+        "limo": 170348,
+        "prm800k": 674218
+      },
+      "teacher_token_ratio": {
+        "prm800k": 0.7983011392833715,
+        "limo": 0.20169886071662843
+      }
+    },
+    "shortfall": 0,
+    "unused_pool_by_source": {
+      "prm800k": 9471,
+      "limo": 408
+    },
+    "remaining_pool_by_source": {
+      "prm800k": 7536,
+      "limo": 383
+    },
+    "final_update_examples": 8,
+    "mixture_policy": "Choose the next seeded source head closest to cumulative 80:20 teacher tokens; never repeat; use PRM when LIMO exhausted",
+    "limo_exhausted": false,
+    "source_run": "math_curriculum_20261021_v1",
+    "source_schedule_sha256": "925300ff021b3c01a775943b4894480b5627df92c0548e984d930fe6ff45f584",
+    "evaluation_sha256": "4f9e1cf6c9608259c7b70f809fd070cb68f5b5b90f67424399110f4e1741f540",
+    "evaluation_counts": {
+      "limo": 200,
+      "prm800k": 200
+    },
+    "training_status": "planned; verify stage2/training/rft/complete.json for completion"
+  },
+  "training_complete": {
+    "complete": true,
+    "updates": 123,
+    "pairs": 1960,
+    "signature": "4047029862dd70e9d1fe3255ad4fc898188a15ade5f84c941d7e5da5babcfae9",
+    "supervised_tokens": 546333
+  },
+  "realized_counts": {
+    "questions": 3000,
+    "questions_by_source": {
+      "limo": 40,
+      "prm800k": 2960
+    },
+    "teacher_tokens": 844566,
+    "teacher_tokens_by_source": {
+      "limo": 170348,
+      "prm800k": 674218
+    },
+    "teacher_token_ratio": {
+      "prm800k": 0.7983011392833715,
+      "limo": 0.20169886071662843
+    }
+  },
+  "rule": "Compare accuracy; submit continued model as requested, irrespective of score. No official inputs used."
+}

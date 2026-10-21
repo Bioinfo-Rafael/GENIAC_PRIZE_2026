@@ -5,6 +5,16 @@
 ローカルの公開データ処理・CPUテストを実施済み。その後、GPU学習ログ・提出JSON・本番スコアを受領した。公開評価は省略した。以下は再現・再開用の起動手順。
 
 
+## 最新結果：数学Curriculum累計3,000問で本番0.20384（2026-10-21）
+
+**訂正後の本番スコア0.20384（ユーザー報告）が、旧300kの0.19317から+0.01067で最高更新。** 固定PRM/LIMO 400問は102→105正解（25.50→26.25%）、PRM94→98/200、LIMO8→7/200。9改善・6悪化、正答率差のpaired bootstrap 95%区間は−1.25〜+2.75ポイントで0を含み、公開評価の改善はまだ明確とは言えない。本番スコアと公開正答率は別指標。
+
+GSM Stage 1と300k LoRAを引き継ぎ、LR5e-6で未使用1,960問・123更新を追加して累計3,000問を完了。PRM2,960＋LIMO40問、教師844,566トークン、教師比79.83:20.17。追加学習更新367.81秒（6分8秒）、ロード・保存込み学習phase400.94秒（6分41秒）、評価合計807.67秒、提出生成phase254.71秒、記録済み全phase合計1,533.93秒（25分34秒）。意図的な評価停止・再開を含むが、停止中の手動待機等は含まない。
+
+提出232回答は反復39→42、平均生成長641.16→648.12 tokenで、反復減少がスコア上昇の説明にはならない。推論設定・主要ライブラリ版は一致。形式検査はエラー・違反・警告すべて0。元JSONは無編集。
+
+[詳細分析・評価・学習量・時間](../../research/20261021_math_curriculum_3000_analysis.md)／[受領評価report](../../research/20261021_math_curriculum_3000_report.json)／[受領runtime](../../research/20261021_math_curriculum_3000_runtime.json)／[提出回答集計](../../research/20261021_math_curriculum_3000_submission_metrics.json)／[実行・再開手順](README.md)。新runは `math_curriculum_20261021_3000_v1`。以下の最高・未確認という旧記録は当時の状態。
+
 ## 追加実験：Stage 2累計3,000問へ継続（2026-10-21）
 
 既存の `math_curriculum_20261021_v1` の300k adapterを引き継ぐ。**Stage 1の再学習・再mergeは行わない。** 既存runのモデル・checkpoint・提出JSONには書き込まず、新run `math_curriculum_20261021_3000_v1` に保存する。今回の経路は、下記の初回実験用「評価省略」経路と異なり、**継続後モデルの提出JSONを先に生成し、その後に既存300kと継続後の2モデルを固定PRM/LIMO評価セットで比較**する。評価結果にかかわらず継続後モデルを提出用に出力するという依頼に従い、別モデルは学習しない。
@@ -89,7 +99,7 @@ cat "$MC_OUT/submission/format_check.json"
 
 実行順変更は `control_continuation_first/run.py` へ別保存し、既存runの `code/` snapshot・学習署名・checkpointは変更しない。提出JSON完成時には `SUBMISSION_READY_BEFORE_EVALUATION` と表示する。その後の評価中でも `submission/submission.json` をダウンロードできる。
 
-実装は既存runnerへの継続分岐、既存GPU loaderへの初期adapter指定、件数ベースの追加schedule作成が中心。共通学習・checkpoint・grader・公式提出エンジンは変更していない。GPU実行・新しい正答率・提出スコアはリモート実行後に記録する。
+実装は既存runnerへの継続分岐、既存GPU loaderへの初期adapter指定、件数ベースの追加schedule作成が中心。共通学習・checkpoint・grader・公式提出エンジンは変更していない。GPU実行と結果の受領は完了し、冒頭の「最新結果」に記録した。以下の初回300k記録とローカル計画値は当時の状態を示す。
 
 ## 実行結果：本番スコア0.19317（2026-10-21）
 

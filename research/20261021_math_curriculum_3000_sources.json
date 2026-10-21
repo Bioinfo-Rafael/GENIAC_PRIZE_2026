@@ -1,0 +1,15 @@
+{
+  "20261021_math_curriculum_3000_report.json": {
+    "received_attachment": "/Users/cls-lab/.codex/attachments/e76322d0-7b7c-40df-addc-853c8ab8184a/貼り付けたテキスト.txt",
+    "sha256": "65deaed8e25aa3fc5a4c134eb9ba322316cc579017113f793374044c54d01ec3"
+  },
+  "20261021_math_curriculum_3000_runtime.json": {
+    "received_attachment": "/Users/cls-lab/.codex/attachments/1aa39d77-b920-44c9-bdee-ee2698f6001c/貼り付けたテキスト.txt",
+    "sha256": "ba780f5207aa68a6d31a8d3b774d256742b7ae1e510aee47d49adf1a3209151e"
+  },
+  "lineage_checks": {
+    "same_stage1": true,
+    "initial_stage2_matches_300k": true,
+    "submission_counts_match_report": true
+  }
+}
