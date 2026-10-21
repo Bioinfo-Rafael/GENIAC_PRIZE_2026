@@ -203,3 +203,41 @@ If an older run failed during `parents`, pull this fix and launch with a **new r
 - B対Dのみ未補正95%区間が0を上回るが、Stage 1とrankの両方が変わり、6比較の多重性も補正していない。rank単独の効果として扱わない。
 - D対Aのデータセット別の正答数差はGSM8Kが+2、PRM800Kが0。ただしPRMの同じ問題が全て同じ正誤という意味ではない。全体では28問改善・26問悪化が相殺されている。
 - 信頼区間は問題の再抽出による不確実性のみを扱い、学習seedや推論実行の変動は含まない。本結果から公式提出スコアの上昇は推定しない。
+
+## 条件Dの本番提出JSON生成（再学習なし）
+
+完了済みD（rank64/alpha128、PRM4,500＋GSM1,500、375更新）の `merged/D` を読取専用で再利用する。Stage 1統合済みのため追加mergeも不要。R12と同じcontext8192・上限2048・greedy・seed42・chunk32で1問1回答を生成し、公式形式チェックを行う。olympiadの上限は公式既定4096から2048への変更を含む。回答を編集せず、Omnicampusへの送信は行わない。
+
+```bash
+(
+  set -e
+  cd "$HOME/geniac-remote"
+  git pull --ff-only origin main
+  if git sparse-checkout list >/dev/null 2>&1; then
+    git sparse-checkout set remote/math_training remote/stage1_rank_ablation remote/rank64_12k
+  fi
+  D_SOURCE="$HOME/geniac_math/rank_ablation/rank_20261021_165303"
+  test -f "$D_SOURCE/conditions/D/complete.json"
+  test -f "$D_SOURCE/merged/D/artifacts.json"
+  nohup bash remote/stage1_rank_ablation/launch_submission_d.sh "$D_SOURCE" \
+    >> "$HOME/geniac_math/submission_D.console.log" 2>&1 < /dev/null &
+  echo "PID=$!"
+)
+```
+
+既存R12提出で使った `.venv-eval` と `.venv-submission-data` を使用し、再installしない。モデルhash・学習完了375更新・rank64/alpha128を検査し、C-suite/R12の学習metadataは流用しない。作業コードは出力先へsnapshotする。同じコマンドで再開でき、保存済みの生成batch・完了した提出JSONは再生成しない。モデル欠落・改変の場合は停止し、学習を起動しない。
+
+```bash
+tail -f "$HOME/geniac_math/submission_D.console.log"
+D_OUTPUT="$HOME/geniac_math/submissions/rank_20261021_165303_D"
+cat "$D_OUTPUT/complete.json"
+cat "$D_OUTPUT/format_check.json"
+```
+
+生成ファイルは `$D_OUTPUT/submission.json`。設定・学習履歴・hashは `manifest.json`、`generation_profile.json`、`hashes.json`。`complete.json` と形式検査の成功を確認する。入力・生回答が含まれ得る処理ログは `private_logs/` に保存し、メインconsoleへ転送しない。進捗件数だけを見る場合：
+
+```bash
+grep '^GENERATED ' "$D_OUTPUT/private_logs/generate.log" | tail -n 1
+```
+
+問題ファイル・private logの本文は外部サービスへ送信しない。ローカル検証は合成ファイルによる条件Dの識別、未完了学習・モデル改変・rank不一致の拒否、manifest再開の検査と、既存提出APIの回帰テスト。GPU推論はリモートで実行する。
