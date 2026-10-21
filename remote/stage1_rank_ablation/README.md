@@ -34,7 +34,7 @@ cd "$HOME/geniac-remote"
 git pull --ff-only origin main
 # If using a sparse checkout, include both helper and new experiment directories:
 if [ "$(git config --bool core.sparseCheckout)" = true ]; then
-  git sparse-checkout add remote/math_training remote/stage1_rank_ablation
+  git sparse-checkout set remote/math_training remote/stage1_rank_ablation
 fi
 mkdir -p "$HOME/geniac_math"
 RANK_ID="rank_$(TZ=Asia/Tokyo date +%Y%m%d_%H%M%S)"
@@ -84,3 +84,9 @@ python -m pytest -q remote/stage1_rank_ablation/tests
 ```
 
 CPU tests cover A training prohibition, quantization-only candidates, sampler coverage, causal-loss/gradient equivalence across microbatches, and paired statistics. Real local cache tokenization was verified against the recorded run03 counts. Actual CUDA throughput, backend compatibility and memory fit must pass the remote short benchmarks; they cannot be measured on this Mac.
+
+## Setup compatibility recovery
+
+TorchAO is pinned to 0.13.0 for Torch 2.8.0; einops is explicit for the FlashAttention binary. Setup now tests Transformers/PEFT imports in addition to `pip check` before declaring the environment ready. This fixes the `ScalingType` ImportError caused by TorchAO 0.18.0.
+
+If an older run failed during `parents`, pull this fix and launch with a **new run ID**. The old run has immutable code and package snapshots; changing its environment and resuming would correctly fail its package-identity check. No training has happened at `parents`; retain the failed directory for diagnosis. The new run reuses already downloaded inputs and Hugging Face model cache.

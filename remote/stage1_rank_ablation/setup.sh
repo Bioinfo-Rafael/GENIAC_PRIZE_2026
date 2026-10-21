@@ -32,6 +32,16 @@ PY
 )"
   timeout 180 "$RANK_ENV/bin/python" -m pip install --no-deps "$RANK_WHEEL" || echo 'FlashAttention binary unavailable; SDPA remains available.'
   "$RANK_ENV/bin/python" -m pip check
+  # pip check cannot detect undeclared Python API incompatibilities.
+  "$RANK_ENV/bin/python" - <<'PYIMPORT'
+import torch, torchao
+from transformers import AutoModelForCausalLM, PreTrainedModel
+from peft import PeftModel
+from importlib.metadata import version
+assert torch.__version__.split('+')[0] == '2.8.0'
+assert version('torchao') == '0.13.0'
+print('Training model imports OK', flush=True)
+PYIMPORT
   touch "$RANK_ENV/.ready-$RANK_HASH"
 fi
 RANK_EVAL="${GENIAC_EVAL_PYTHON:-$RANK_WORKSPACE/.venv-eval/bin/python}"

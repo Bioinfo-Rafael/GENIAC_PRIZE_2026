@@ -7,3 +7,6 @@ safetensors==0.6.2
 gdown==5.2.0
 matplotlib==3.10.7
 math-verify==0.9.0
+# Compatible with torch 2.8; constrain transitive Unsloth dependencies.
+torchao==0.13.0
+einops==0.8.1
