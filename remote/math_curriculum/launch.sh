@@ -31,5 +31,13 @@ for MC_PY in "$MC_TRAIN" "$MC_EVAL" "$MC_DATA"; do
 done
 export HF_HOME="${HF_HOME:-$MC_WORKSPACE/hf_cache}"
 export HF_HUB_DISABLE_TELEMETRY=1 TOKENIZERS_PARALLELISM=false
-exec "$MC_TRAIN" -u "$MC_ROOT/code/math_curriculum/run.py" --root "$MC_ROOT" \
+# The small submission-first controller is separate from the frozen training
+# snapshot. Existing optimizer/checkpoint signatures therefore remain unchanged.
+mkdir -p "$MC_ROOT/control_submission_first"
+if [[ ! -f "$MC_ROOT/control_submission_first/run.py" ]]; then
+  cp "$MC_HERE/run.py" "$MC_ROOT/control_submission_first/run.py.partial"
+  mv "$MC_ROOT/control_submission_first/run.py.partial" "$MC_ROOT/control_submission_first/run.py"
+fi
+export PYTHONPATH="$MC_ROOT/code/math_curriculum${PYTHONPATH:+:$PYTHONPATH}"
+exec "$MC_TRAIN" -u "$MC_ROOT/control_submission_first/run.py" --root "$MC_ROOT" \
   --eval-python "$MC_EVAL" --data-python "$MC_DATA"

@@ -134,7 +134,8 @@ def test_native_mean_to_sum_matches_masked_nll_gradient():
     assert torch.count_nonzero(a[:,0])==0
 
 
-def test_pipeline_failure_resume_and_no_retraining(tmp_path,monkeypatch):
+@pytest.mark.parametrize('submission_first,resume_first',[(False,False),(True,True),(False,True)])
+def test_pipeline_failure_resume_and_no_retraining(tmp_path,monkeypatch,submission_first,resume_first):
     """Execute real orchestration with fake GPU children; failure cannot select early."""
     import json
     from types import SimpleNamespace
@@ -156,6 +157,8 @@ def test_pipeline_failure_resume_and_no_retraining(tmp_path,monkeypatch):
                           'stage1/schedule.json','stage2/pairs.json','tokenizer/stage2/tokenizer.json']:put(n)
                 put('stage2/schedule.json',{'milestone_steps':{'100000':1,'300000':2}})
             elif script=='gpu.py' and 'train' in cmd:
+                if submission_first and stage=='stage2' and fail['enabled']:
+                    self.returncode=1;return
                 put(f'{stage}/training/rft/final/artifacts.json')
                 put(f'{stage}/training/rft/milestones/step-00001/artifacts.json')
                 put(f'{stage}/training/rft/milestones/step-00002/artifacts.json')
@@ -172,13 +175,18 @@ def test_pipeline_failure_resume_and_no_retraining(tmp_path,monkeypatch):
                 put('submission/inference_times.json',[])
         def poll(self): return self.returncode
     monkeypatch.setattr(runner.subprocess,'Popen',Process)
-    a=SimpleNamespace(root=root,eval_python='eval-python',data_python='data-python')
-    with pytest.raises(RuntimeError,match='eval_100000'):runner.run(a)
+    a=SimpleNamespace(root=root,eval_python='eval-python',data_python='data-python',submission_first=submission_first)
+    with pytest.raises(RuntimeError,match='stage2_300000' if submission_first else 'eval_100000'):runner.run(a)
     assert not (root/'selection.json').exists()
-    before=len(calls);fail['enabled']=False;runner.run(a)
+    before=len(calls);fail['enabled']=False;a.submission_first=resume_first;runner.run(a)
     assert read(root/'status.json')['status']=='complete'
     assert not any(s=='gpu.py' and stage=='stage1' for s,stage,m,args in calls[before:])
     assert sum('train' in args and stage=='stage2' for s,stage,m,args in calls)==2
+    if resume_first:
+        assert not any(s=='evaluate.py' for s,stage,m,args in calls[before:])
+        assert not any(s=='gpu.py' and m=='100000' for s,stage,m,args in calls[before:])
+        assert read(root/'selection.json')['candidate']=='300000'
+        assert read(root/'report.json')['evaluation_status']=='skipped'
     before=len(calls);runner.run(a);assert len(calls)==before
 
 
@@ -233,3 +241,17 @@ def test_curriculum_submission_uses_selected_model_and_raw_outputs(tmp_path,monk
     assert not read(dest/'format_check.json')['errors']
     assert len(read(dest/'inference_times.json'))==1
     assert read(dest/'hashes.json')['files']['submission.json']==sha(dest/'submission.json')
+
+
+def test_separate_controller_uses_frozen_training_code(tmp_path):
+    import os,shutil,subprocess
+    frozen=tmp_path/'code';controller=tmp_path/'control_submission_first'
+    (frozen/'math_curriculum').mkdir(parents=True);(frozen/'math_training').mkdir();controller.mkdir()
+    shutil.copyfile(HERE/'common.py',frozen/'math_curriculum/common.py')
+    for name in ('core.py','suite_utils.py','published_data.py','c_utils.py'):
+        shutil.copyfile(HERE.parent/'math_training'/name,frozen/'math_training'/name)
+    shutil.copyfile(HERE/'run.py',controller/'run.py')
+    (controller/'probe.py').write_text('import run\nprint(run.HERE)\nprint(run.LEGACY)\n')
+    result=subprocess.check_output([sys.executable,str(controller/'probe.py')],text=True,
+        env=dict(os.environ,PYTHONPATH=str(frozen/'math_curriculum')))
+    assert result.splitlines()==[str(frozen/'math_curriculum'),str(frozen/'math_training')]

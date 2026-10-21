@@ -21,8 +21,25 @@ def phase_order():
             'stage2_300000','merge_300000','eval_300000','select','submission_fetch','submission_generate']
 
 
+def select_without_evaluation(root):
+    """Keep any already frozen decision; otherwise use the final training milestone."""
+    if (root/'selection.json').exists():
+        return read(root/'selection.json')
+    decision=dict(candidate='300000',rule='final training checkpoint; public evaluation skipped by user request',
+                  evaluated=False,checkpoint_comparison_performed=False)
+    immutable_json(root/'selection.json',decision)
+    immutable_json(root/'report.json',dict(selected='300000',evaluation_status='skipped',
+        checkpoint_comparison_performed=False,data=read(root/'data/report.json')))
+    return decision
+
+
 def run(a):
     root=a.root.resolve();root.mkdir(parents=True,exist_ok=True)
+    submission_first=getattr(a,'submission_first',True)
+    if submission_first:
+        immutable_json(root/'submission_first_policy.json',dict(
+            mode='skip_public_evaluation_use_final_checkpoint',controller_sha256=sha(Path(__file__)),
+            preserve_existing_selection=True))
     code={str(p.relative_to(HERE.parent)):sha(p) for folder in
           (HERE,LEGACY,HERE.parent/'public_eval_diagnostics',HERE.parent/'rank64_12k')
           for p in folder.rglob('*') if p.is_file() and '__pycache__' not in p.parts
@@ -90,15 +107,20 @@ def run(a):
               'stage1/pairs.json','stage1/schedule.json','stage2/pairs.json','stage2/schedule.json','tokenizer'])
         phase('stage1_train','gpu.py',['train','--stage','stage1'],outputs=['stage1/training/rft/final'])
         phase('stage1_merge','gpu.py',['merge','--stage','stage1'],outputs=['models/stage1'])
-        for milestone in ('100000','300000'):
+        for milestone in (('300000',) if submission_first else ('100000','300000')):
             step=read(root/'stage2/schedule.json')['milestone_steps'][milestone]
             phase('stage2_'+milestone,'gpu.py',['train','--stage','stage2','--until',step],
                   outputs=[f'stage2/training/rft/milestones/step-{step:05d}'])
             phase('merge_'+milestone,'gpu.py',['merge','--stage','stage2','--milestone',milestone],
                   outputs=['models/'+milestone])
-            phase('eval_'+milestone,'evaluate.py',['--milestone',milestone],a.eval_python,
+            if not submission_first:
+                phase('eval_'+milestone,'evaluate.py',['--milestone',milestone],a.eval_python,
                   outputs=[f'evaluations/{milestone}/metrics.json',f'evaluations/{milestone}/generations/b0_eval.json'])
-        phase('select','evaluate.py',python=a.eval_python,outputs=['selection.json','question_changes.json','report.json'])
+        if submission_first:
+            decision=select_without_evaluation(root)
+            print('PUBLIC_EVALUATION_SKIPPED selected='+decision['candidate'],flush=True)
+        else:
+            phase('select','evaluate.py',python=a.eval_python,outputs=['selection.json','question_changes.json','report.json'])
         phase('submission_fetch','submit.py',['fetch'],a.data_python,outputs=['submission/question_identity.json'],private=True)
         phase('submission_generate','submit.py',['generate'],a.eval_python,
               outputs=['submission/submission.json','submission/format_check.json','submission/hashes.json',
@@ -126,4 +148,6 @@ def run(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--root',type=Path,required=True)
     p.add_argument('--eval-python',required=True);p.add_argument('--data-python',required=True)
+    p.add_argument('--evaluate-checkpoints',dest='submission_first',action='store_false',
+                   help='Optional original public-evaluation workflow; default skips it')
     run(p.parse_args())

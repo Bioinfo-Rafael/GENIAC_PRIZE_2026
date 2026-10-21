@@ -1,8 +1,25 @@
 # GSM8K → PRM800K/LIMO：数学だけの2段階SFT
 
-新しく学習するのは **1条件だけ**。Tulu Stage 1、run03等の既存adapter、過去の提出回答は読み込まない。固定revisionのBaseからGSM2,000例を学習してmergeし、新しい数学LoRAを学習する。PRM/LIMO評価→採用checkpointの公式提出JSON生成まで自動実行する。Omnicampusへの送信はしない。
+新しく学習するのは **1条件だけ**。Tulu Stage 1、run03等の既存adapter、過去の提出回答は読み込まない。固定revisionのBaseからGSM2,000例を学習してmergeし、新しい数学LoRAを学習する。現在は公開評価を省略し、最終checkpointの公式提出JSON生成まで自動実行する。Omnicampusへの送信はしない。
 
 ローカルの公開データ処理・CPUテストを実施済み。**GPU学習・評価・提出推論は未実行**。以下のコマンドでRTX 6000 Ada環境から起動する。
+
+
+## 更新：評価を省略して提出JSONを先に生成
+
+現在の既定動作は、PRM200＋LIMO200の**評価推論を実行せず**、Stage 2を最後まで学習して30万予算側のcheckpointから提出JSONを作る。10万側adapterは保存するが、そのmerge・評価のための中断は省略する。正答率比較・paired bootstrapは実施せず、`report.json` に `evaluation_status: skipped` を記録する。既に選択まで完了しているrunでは、その確定済み選択・提出を保持する。
+
+評価用400問の分離と学習からの除外は維持する。これによりデータ・学習条件・optimizer状態が変わらず、既存runを再学習せず継続できる。以下の旧「評価と選択」の説明は `run.py --evaluate-checkpoints` を明示した場合のみ適用する。
+
+既に旧コマンドで起動した場合も、pull後に次のコマンドで切り替えられる。同じrunの旧coordinatorだけへSIGTERMを送り、checkpoint保存・終了を待ってからバックグラウンド再開する。別のGPUジョブは停止しない。新方式が既に動いていればそのまま継続する。
+
+```bash
+cd "$HOME/geniac-remote"
+git pull --ff-only origin main
+bash remote/math_curriculum/start_submission_first.sh math_curriculum_20261021_v1
+```
+
+新しい制御処理は `control_submission_first/run.py` に別保存する。既存の `code/`、学習署名、checkpoint、完了phaseのreceiptは変更しない。提出先とログは下記のまま。学習開始前でも同じコマンドで起動できる。
 
 ## pull・バックグラウンド起動
 
