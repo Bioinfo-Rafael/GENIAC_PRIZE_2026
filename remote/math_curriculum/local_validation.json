@@ -1,0 +1,39 @@
+{
+  "date_jst": "2026-10-21",
+  "scope": "Public data preparation and CPU validation only; no GPU training/inference or official data accessed",
+  "evaluation_sha256": "4f9e1cf6c9608259c7b70f809fd070cb68f5b5b90f67424399110f4e1741f540",
+  "evaluation_count": 400,
+  "gold_unparseable_by_dataset": {},
+  "prior_split_sha256": "d0fb00708ca3c6f6eacc83fded2656caeaff7980a3d6f3315d6df8212ef4773f",
+  "stage1_examples": 2000,
+  "stage1_schedule": {
+    "actual_tokens": 322649,
+    "examples": 2000,
+    "tokens_by_source": {
+      "gsm8k": 322649
+    }
+  },
+  "stage2_milestones": {
+    "100000": {
+      "actual_tokens": 99678,
+      "step": 23,
+      "tokens_by_source": {
+        "prm800k": 79822,
+        "limo": 19856
+      }
+    },
+    "300000": {
+      "actual_tokens": 298233,
+      "step": 65,
+      "tokens_by_source": {
+        "prm800k": 238379,
+        "limo": 59854
+      }
+    }
+  },
+  "filters": {
+    "limo:overlength": 183
+  },
+  "pad_token_id": 151662,
+  "eos_token_id": 151643
+}
