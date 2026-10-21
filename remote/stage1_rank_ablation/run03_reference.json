@@ -1,0 +1,33 @@
+{
+  "source": "colab_t4/experiments/run03_auto_t4.ipynb (executed local notebook; not modified)",
+  "worker_cell_sha256": "30253322d756a36ff45822a2d9c6d27a31ff9d48271fdfc52fa85819e8f55281",
+  "observed_stack": {
+    "unsloth": "2026.10.5",
+    "transformers": "5.17.0",
+    "torch": "2.11.0+cu130"
+  },
+  "config": {
+    "seed": 42,
+    "examples": 6000,
+    "prm800k": 4500,
+    "gsm8k": 1500,
+    "epoch": 1,
+    "lr": 5e-05,
+    "effective_batch": 16,
+    "max_length": 2048,
+    "warmup_ratio": 0.03,
+    "scheduler": "cosine",
+    "optimizer": "paged_adamw_8bit",
+    "weight_decay": 0.0,
+    "loss": "all_nonpadding",
+    "packing": false,
+    "lora_dropout": 0.0
+  },
+  "observed_data": {
+    "tokens": 1598551,
+    "maximum_length": 1923,
+    "trainable_rank8_parameters": 16515072
+  },
+  "order": "original hash-sorted cache, then epoch-0 SeedableRandomSampler(data_seed=42); original emitted sampler indices unavailable",
+  "precision_note": "NF4 double quantization with FP16 compute, as run03; backend/library versions differ, not a bitwise replay"
+}
