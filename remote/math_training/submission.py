@@ -1,4 +1,4 @@
-"""Generate a submission from the frozen C-suite selection; never edit model answers."""
+"""Submission helpers; legacy C-suite CLI and explicit-model generation API."""
 import argparse
 import datetime
 import fcntl
@@ -67,29 +67,40 @@ def prediction(q,out):
          'prompt_token_ids':list(out.prompt_token_ids),'finish_reason':v.finish_reason,'stop_reason':v.stop_reason})
 
 
-def generate(root):
+def generate(root, *, model_path=None, recipe_detail=None, stage1_slug="shared_stage1", build_messages=None, run_id=None):
     from vllm import LLM,SamplingParams
     import torch
     from worker import check_model
     manifest=read(root/'manifest.json'); cfg=manifest['config']
+    model_path=Path(model_path) if model_path is not None else root/'models/rft'
+    if recipe_detail is not None or build_messages is not None or run_id is not None:
+        immutable_json(root/'generation_profile.json',dict(model_path=str(model_path.resolve()),
+            model_artifacts_sha256=sha(model_path/'artifacts.json'),recipe_detail=recipe_detail,
+            stage1_slug=stage1_slug,run_id=run_id,official_chat_builder=build_messages is not None,
+            manifest_sha256=sha(root/'manifest.json')))
+    if (root/'complete.json').exists():
+        if sha(root/'submission.json')!=read(root/'complete.json')['sha256']:
+            raise ValueError('Completed submission changed')
+        print('SUBMISSION_READY '+str(root/'submission.json'),flush=True);return
     rows=read(root/'questions.json');validate_questions(rows)
     if sha(root/'questions.json')!=read(root/'question_identity.json')['sha256']:
         raise ValueError('Cached questions changed')
-    if not check_model(root/'models/rft'): raise ValueError('Merged model missing')
+    if not check_model(model_path): raise ValueError('Merged model missing')
     packages={x:importlib.metadata.version(x) for x in ('vllm','torch','transformers')}
-    signature=digest([manifest,sha(root/'questions.json'),packages,sha(root/'models/rft/artifacts.json')])
+    signature=digest([manifest,sha(root/'questions.json'),packages,sha(model_path/'artifacts.json')])
     path=root/'partial.json'
     partial=read(path) if path.exists() else {'signature':signature,'predictions':[],'raw_outputs':[]}
     validate_partial(partial,signature,rows)
     template=(HERE/'chat_template.jinja').read_text()
-    llm=LLM(model=str(root/'models/rft'),dtype='half',max_model_len=cfg['context'],
+    llm=LLM(model=str(model_path),dtype='half',max_model_len=cfg['context'],
         gpu_memory_utilization=cfg['vllm_memory'],max_num_seqs=cfg['eval_chunk'],
         seed=cfg['seed'],trust_remote_code=False,enable_prefix_caching=True)
     tok=llm.get_tokenizer()
     if tok.chat_template!=template: raise ValueError('Tokenizer template mismatch')
-    prompts=[];framings=set()
+    prompts=[];conversations=[];framings=set()
     for q in rows:
-        messages=[{'role':'user','content':q['turns'][0]}]
+        messages=build_messages(q['turns'][0]) if build_messages else [{'role':'user','content':q['turns'][0]}]
+        conversations.append(messages)
         rendered=tok.apply_chat_template(messages,tokenize=False,add_generation_prompt=True)
         text=q['turns'][0]
         if rendered.count(text)!=1: raise ValueError('Question not preserved exactly once in prompt')
@@ -103,7 +114,10 @@ def generate(root):
     for start in range(len(partial['predictions']),len(rows),cfg['eval_chunk']):
         end=min(len(rows),start+cfg['eval_chunk'])
         params=[SamplingParams(n=1,temperature=0.,seed=cfg['seed'],max_tokens=cfg['max_tokens']) for _ in rows[start:end]]
-        outputs=llm.generate([{'prompt_token_ids':p} for p in prompts[start:end]],params,use_tqdm=False)
+        if build_messages is None:
+            outputs=llm.generate([{'prompt_token_ids':p} for p in prompts[start:end]],params,use_tqdm=False)
+        else:
+            outputs=llm.chat(conversations[start:end],params,use_tqdm=False)
         if len(outputs)!=end-start: raise ValueError('Incomplete generation batch')
         for q,out,expected in zip(rows[start:end],outputs,prompts[start:end]):
             if list(out.prompt_token_ids)!=expected: raise ValueError('Engine prompt differs')
@@ -113,8 +127,8 @@ def generate(root):
     validate_partial(partial,signature,rows)
     prefix,suffix=next(iter(framings))
     meta={'path':'ii','base_model':cfg['base_model'],'recipe':'custom',
-        'recipe_detail':'run03 Stage 2 continued with published GSM8K/LIMO NLL, F10; frozen C-suite selection',
-        'run_id':root.name,'stage1_slug':'shared_stage1','stage2_slug':manifest['candidate'],
+        'recipe_detail':recipe_detail if recipe_detail is not None else 'run03 Stage 2 continued with published GSM8K/LIMO NLL, F10; frozen C-suite selection',
+        'run_id':run_id or root.name,'stage1_slug':stage1_slug,'stage2_slug':manifest['candidate'],
         'adapter_source':'local','generated_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),
         'colab_env':'remote '+torch.cuda.get_device_name(0),'vllm_version':packages['vllm'],
         'chat_template':{'applied':True,'sha256':sha(HERE/'chat_template.jinja'),'is_default':True,

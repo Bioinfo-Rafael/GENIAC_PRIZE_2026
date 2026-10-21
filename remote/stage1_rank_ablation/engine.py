@@ -253,7 +253,7 @@ def train(root,name,cfg):
         peak=max(peak,torch.cuda.max_memory_allocated())
         write(destination/f'updates/{step:04d}.json',dict(step=step,loss=loss,gradient_norm=norm,
             seconds=elapsed,remaining_training_seconds=seconds/step*(TOTAL_STEPS-step),supervised_tokens=target_count(part),learning_rate=optimizer.param_groups[0]['lr']))
-        print(f'{name} step={step}/{TOTAL_STEPS} loss={loss:.5f} seconds={elapsed:.2f} ETA_training_minutes={seconds/step*(TOTAL_STEPS-step)/60:.1f} (approx)',flush=True)
+        print(f'{name} step={step}/{TOTAL_STEPS} loss={loss:.5f} seconds={elapsed:.2f} elapsed_training_minutes={seconds/60:.1f} ETA_training_minutes={seconds/step*(TOTAL_STEPS-step)/60:.1f} (approx)',flush=True)
         if step%25==0: save_checkpoint()
     save_checkpoint();save_model(model,tok,destination/'final')
     total=read(root/'data/report.json')['supervised_tokens']

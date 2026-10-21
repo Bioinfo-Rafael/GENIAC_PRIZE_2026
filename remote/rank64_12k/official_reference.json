@@ -1,0 +1,20 @@
+{
+  "source": "notebook2_inference.ipynb, code cells only",
+  "inference_cell_sha256": "e5b348031f7504499c1fb618f1eccd3e565c61bd3aa0060df92071a80627ae6c",
+  "builder_sha256": "063088993d4d0df89c2a647ef97fda2b411143861709970ee4f824fcb6d77c3f",
+  "runtime_adaptations": [
+    "persistent model path and remote Python environments",
+    "incremental resume with output-integrity validation",
+    "no answer preview or question logging"
+  ],
+  "config_overrides": {
+    "max_model_len": 8192,
+    "max_tokens_all_tasks": 2048,
+    "chunk_size": 32,
+    "gpu_memory_utilization": 0.8,
+    "temperature": 0.0,
+    "seed": 42,
+    "dtype": "float16"
+  },
+  "configuration_scope": "Distributed config explicitly permits model and vLLM inference parameter changes; single user-turn and JSON schema preserved."
+}
