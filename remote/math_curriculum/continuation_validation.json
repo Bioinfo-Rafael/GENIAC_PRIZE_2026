@@ -1,0 +1,65 @@
+{
+  "target_cumulative_questions": 3000,
+  "existing": {
+    "questions": 1040,
+    "questions_by_source": {
+      "limo": 15,
+      "prm800k": 1025
+    },
+    "teacher_tokens": 298233,
+    "teacher_tokens_by_source": {
+      "limo": 59854,
+      "prm800k": 238379
+    },
+    "teacher_token_ratio": {
+      "prm800k": 0.7993045705874267,
+      "limo": 0.2006954294125734
+    }
+  },
+  "additional": {
+    "questions": 1960,
+    "questions_by_source": {
+      "prm800k": 1935,
+      "limo": 25
+    },
+    "teacher_tokens": 546333,
+    "teacher_tokens_by_source": {
+      "prm800k": 435839,
+      "limo": 110494
+    },
+    "teacher_token_ratio": {
+      "prm800k": 0.7977533848403813,
+      "limo": 0.20224661515961878
+    }
+  },
+  "cumulative": {
+    "questions": 3000,
+    "questions_by_source": {
+      "limo": 40,
+      "prm800k": 2960
+    },
+    "teacher_tokens": 844566,
+    "teacher_tokens_by_source": {
+      "limo": 170348,
+      "prm800k": 674218
+    },
+    "teacher_token_ratio": {
+      "prm800k": 0.7983011392833715,
+      "limo": 0.20169886071662843
+    }
+  },
+  "shortfall": 0,
+  "unused_pool_by_source": {
+    "prm800k": 9471,
+    "limo": 408
+  },
+  "remaining_pool_by_source": {
+    "prm800k": 7536,
+    "limo": 383
+  },
+  "final_update_examples": 8,
+  "mixture_policy": "Choose the next seeded source head closest to cumulative 80:20 teacher tokens; never repeat; use PRM when LIMO exhausted",
+  "limo_exhausted": false,
+  "additional_updates": 123,
+  "validation_scope": "Local cached public-data plan only; remote source completion must be verified at launch"
+}

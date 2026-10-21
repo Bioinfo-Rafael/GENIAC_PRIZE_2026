@@ -9,7 +9,7 @@ import official_prompt
 
 def run(root,phase):
     verify_assets();decision=read(root/'selection.json');name=decision['candidate']
-    if name not in ('100000','300000'): raise ValueError('Unknown selected checkpoint')
+    if name not in ('100000','300000','cumulative3000'): raise ValueError('Unknown selected checkpoint')
     dest=root/'submission';dest.mkdir(exist_ok=True)
     if phase=='fetch': fetch(dest);return
     from worker import check_model
@@ -21,6 +21,9 @@ def run(root,phase):
         training_config_sha256={s:sha(root/s/'training_contract.json') for s in ('stage1','stage2')},
         inference_config_sha256=digest(CONFIG),
         official_assets=read(LEGACY/'submission_assets/manifest.json'))
+    if (root/'continuation.json').exists():
+        manifest['continuation']=read(root/'continuation.json')
+        manifest['training_counts']=read(root/'data/report.json')
     immutable_json(dest/'manifest.json',manifest)
     official=read(LEGACY/'submission_assets/inference_config.json')
     official_prompt._prompt_spec=official['prompt'];official_prompt._placeholder=official['prompt']['placeholder']
@@ -37,10 +40,14 @@ def run(root,phase):
         write(timing_path,timings)
         return result
     LLM.chat=timed_chat
+    detail=('Qwen3-4B-Base pinned revision; existing GSM8K Stage1 2000 examples retained; '
+            'continue existing 300k rank8 alpha16 PRM/LIMO LoRA at LR5e-6 targeting cumulative 3000 unique questions; '
+            'actual counts in provenance; response-only NLL; '+name) if (root/'continuation.json').exists() else (
+            'Qwen3-4B-Base pinned revision; new GSM8K Stage1 2000 examples, rank8 alpha16; '
+            'merged then fresh rank8 alpha16 PRM/LIMO response NLL, teacher-token target 80/20; '+name)
     try:
         generate(dest,model_path=model,stage1_slug='gsm8k_2000_rank8',run_id=root.name,
-            recipe_detail='Qwen3-4B-Base pinned revision; new GSM8K Stage1 2000 examples, rank8 alpha16; '
-                'merged then fresh rank8 alpha16 PRM/LIMO response NLL, teacher-token target 80/20; '+name,
+            recipe_detail=detail,
             build_messages=official_prompt._build_messages)
     finally:
         LLM.chat=original_chat

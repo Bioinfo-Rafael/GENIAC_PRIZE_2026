@@ -11,7 +11,7 @@ def train(root, stage, until=None):
     from unsloth import FastLanguageModel
     import torch
     import worker
-    from peft import set_peft_model_state_dict
+    from peft import set_peft_model_state_dict, get_peft_model_state_dict
     from safetensors.torch import load_file
     from losses import collate
     work=root/stage
@@ -20,6 +20,12 @@ def train(root, stage, until=None):
         context=2048 if stage=='stage1' else 8192, published_schedule=True,
         save_milestones=True, checkpoint_at_milestones=True, checkpoint_every=10,
         auto_oom_microbatch=True)
+    continuation=read(root/'continuation.json') if (root/'continuation.json').exists() else None
+    if continuation:
+        if stage!='stage2': raise ValueError('Continuation must never retrain Stage 1')
+        cfg['learning_rate']=5e-6
+        cfg['initial_adapter']=continuation['initial_adapter']
+        cfg['initial_adapter_sha256']=continuation['initial_adapter_sha256']
     parent=BASE if stage=='stage1' else str(root/'models/stage1')
     identity=dict(config=cfg,parent_revision=REVISION if stage=='stage1' else
                   sha(root/'models/stage1/artifacts.json'),code=read(root/'identity.json'))
@@ -34,8 +40,16 @@ def train(root, stage, until=None):
         model=FastLanguageModel.get_peft_model(model,r=8,lora_alpha=16,lora_dropout=0,bias='none',
             target_modules=['q_proj','k_proj','v_proj','o_proj','gate_proj','up_proj','down_proj'],
             random_state=SEED,use_gradient_checkpointing='unsloth')
+        if adapter is None and continuation:
+            adapter=Path(cfg['initial_adapter'])
+            if sha(adapter/'adapter_model.safetensors')!=cfg['initial_adapter_sha256']:
+                raise ValueError('Initial adapter changed')
         if adapter:
-            state=set_peft_model_state_dict(model,load_file(str(adapter/'adapter_model.safetensors')))
+            weights=load_file(str(adapter/'adapter_model.safetensors'))
+            expected_weights=get_peft_model_state_dict(model)
+            if set(weights)!=set(expected_weights) or any(weights[k].shape!=v.shape for k,v in expected_weights.items()):
+                raise ValueError('Continuation/resume LoRA keys or shapes differ')
+            state=set_peft_model_state_dict(model,weights)
             if state.unexpected_keys: raise ValueError('Resume adapter keys differ')
         else:
             if any(torch.count_nonzero(p).item() for n,p in model.named_parameters() if 'lora_B' in n):
@@ -66,6 +80,8 @@ def train(root, stage, until=None):
 
 
 def merge(root, stage, milestone=None):
+    if stage=='stage1' and (root/'continuation.json').exists():
+        raise ValueError('Continuation must never merge Stage 1')
     import torch
     from transformers import AutoModelForCausalLM
     from peft import PeftModel

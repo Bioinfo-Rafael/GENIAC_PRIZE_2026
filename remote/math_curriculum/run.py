@@ -18,7 +18,8 @@ def verify_receipt(root,receipt):
 
 def phase_order():
     return ['prepare','stage1_train','stage1_merge','stage2_100000','merge_100000','eval_100000',
-            'stage2_300000','merge_300000','eval_300000','select','submission_fetch','submission_generate']
+            'stage2_300000','merge_300000','eval_300000','select','submission_fetch','submission_generate','stage2_cumulative3000','merge_cumulative3000',
+            'eval_cumulative3000','compare_continuation']
 
 
 def select_without_evaluation(root):
@@ -35,7 +36,21 @@ def select_without_evaluation(root):
 
 def run(a):
     root=a.root.resolve();root.mkdir(parents=True,exist_ok=True)
-    submission_first=getattr(a,'submission_first',True)
+    source=getattr(a,'continue_from',None)
+    continuation=source is not None
+    if continuation:
+        source=source.resolve()
+        if source==root or source in root.parents or root in source.parents:
+            raise ValueError('Use a separate sibling run for continuation')
+        if (root/'identity.json').exists() and read(root/'identity.json').get('recipe')!='continue_300k_to_3000_v1':
+            raise ValueError('Destination already belongs to another experiment; choose a new run ID')
+        immutable_json(root/'continuation_request.json',dict(source=str(source),target=3000))
+        if (root/'continuation.json').exists():
+            from continuation import verify_source
+            verify_source(read(root/'continuation.json'))
+    elif (root/'continuation_request.json').exists():
+        raise ValueError('Resume continuation with --continue-from')
+    submission_first=getattr(a,'submission_first',True) and not continuation
     if submission_first:
         immutable_json(root/'submission_first_policy.json',dict(
             mode='skip_public_evaluation_use_final_checkpoint',controller_sha256=sha(Path(__file__)),
@@ -44,7 +59,7 @@ def run(a):
           (HERE,LEGACY,HERE.parent/'public_eval_diagnostics',HERE.parent/'rank64_12k')
           for p in folder.rglob('*') if p.is_file() and '__pycache__' not in p.parts
           and p.suffix in ('.py','.json','.jinja','.sh','.txt')}
-    immutable_json(root/'identity.json',dict(code=code,config=CONFIG,recipe='gsm2000_prm80_limo20_v1'))
+    immutable_json(root/'identity.json',dict(code=code,config=CONFIG,recipe=('continue_300k_to_3000_v1' if continuation else 'gsm2000_prm80_limo20_v1')))
     for role,python in [('train',sys.executable),('eval',a.eval_python),('data',a.data_python)]:
         packages=subprocess.check_output([python,'-m','pip','freeze'],text=True).splitlines()
         immutable_json(root/f'packages_{role}.json',sorted(packages))
@@ -103,30 +118,47 @@ def run(a):
             paths.extend(sorted(p for p in path.rglob('*') if p.is_file()) if path.is_dir() else [path])
         write(receipt,dict(files={str(p.relative_to(root)):sha(p) for p in paths},timing=timing))
     try:
-        phase('prepare','entry.py',outputs=['data/complete.json','data/eval.json','data/report.json',
-              'stage1/pairs.json','stage1/schedule.json','stage2/pairs.json','stage2/schedule.json','tokenizer'])
-        phase('stage1_train','gpu.py',['train','--stage','stage1'],outputs=['stage1/training/rft/final'])
-        phase('stage1_merge','gpu.py',['merge','--stage','stage1'],outputs=['models/stage1'])
-        for milestone in (('300000',) if submission_first else ('100000','300000')):
-            step=read(root/'stage2/schedule.json')['milestone_steps'][milestone]
-            phase('stage2_'+milestone,'gpu.py',['train','--stage','stage2','--until',step],
-                  outputs=[f'stage2/training/rft/milestones/step-{step:05d}'])
-            phase('merge_'+milestone,'gpu.py',['merge','--stage','stage2','--milestone',milestone],
-                  outputs=['models/'+milestone])
-            if not submission_first:
-                phase('eval_'+milestone,'evaluate.py',['--milestone',milestone],a.eval_python,
-                  outputs=[f'evaluations/{milestone}/metrics.json',f'evaluations/{milestone}/generations/b0_eval.json'])
-        if submission_first:
-            decision=select_without_evaluation(root)
-            print('PUBLIC_EVALUATION_SKIPPED selected='+decision['candidate'],flush=True)
+        if continuation:
+            from continuation import NAME
+            phase('prepare','continuation.py',['prepare'],outputs=['data/complete.json','continuation.json',
+                'data/eval.json','data/report.json','data/used_stage2_ids.json','data/additional_stage2_ids.json',
+                'stage2/pairs.json','stage2/schedule.json'])
+            phase('stage2_'+NAME,'gpu.py',['train','--stage','stage2'],
+                outputs=['stage2/training/rft/final','stage2/training/rft/complete.json'])
+            phase('merge_'+NAME,'gpu.py',['merge','--stage','stage2','--milestone',NAME],outputs=['models/'+NAME])
+            phase('eval_300000','continuation.py',['baseline'],a.eval_python,
+                outputs=['evaluations/300000/metrics.json','evaluations/300000/generations/b0_eval.json',
+                         'evaluations/300000/contract.json'])
+            phase('eval_'+NAME,'evaluate.py',['--milestone',NAME],a.eval_python,
+                outputs=[f'evaluations/{NAME}/metrics.json',f'evaluations/{NAME}/generations/b0_eval.json',
+                         f'evaluations/{NAME}/contract.json'])
+            phase('compare_continuation','continuation.py',['report'],a.eval_python,
+                outputs=['selection.json','question_changes.json','report.json'])
         else:
-            phase('select','evaluate.py',python=a.eval_python,outputs=['selection.json','question_changes.json','report.json'])
+            phase('prepare','entry.py',outputs=['data/complete.json','data/eval.json','data/report.json',
+                  'stage1/pairs.json','stage1/schedule.json','stage2/pairs.json','stage2/schedule.json','tokenizer'])
+            phase('stage1_train','gpu.py',['train','--stage','stage1'],outputs=['stage1/training/rft/final'])
+            phase('stage1_merge','gpu.py',['merge','--stage','stage1'],outputs=['models/stage1'])
+            for milestone in (('300000',) if submission_first else ('100000','300000')):
+                step=read(root/'stage2/schedule.json')['milestone_steps'][milestone]
+                phase('stage2_'+milestone,'gpu.py',['train','--stage','stage2','--until',step],
+                      outputs=[f'stage2/training/rft/milestones/step-{step:05d}'])
+                phase('merge_'+milestone,'gpu.py',['merge','--stage','stage2','--milestone',milestone],
+                      outputs=['models/'+milestone])
+                if not submission_first:
+                    phase('eval_'+milestone,'evaluate.py',['--milestone',milestone],a.eval_python,
+                      outputs=[f'evaluations/{milestone}/metrics.json',f'evaluations/{milestone}/generations/b0_eval.json'])
+            if submission_first:
+                decision=select_without_evaluation(root)
+                print('PUBLIC_EVALUATION_SKIPPED selected='+decision['candidate'],flush=True)
+            else:
+                phase('select','evaluate.py',python=a.eval_python,outputs=['selection.json','question_changes.json','report.json'])
         phase('submission_fetch','submit.py',['fetch'],a.data_python,outputs=['submission/question_identity.json'],private=True)
         phase('submission_generate','submit.py',['generate'],a.eval_python,
               outputs=['submission/submission.json','submission/format_check.json','submission/hashes.json',
                        'submission/manifest.json','submission/complete.json','submission/inference_times.json'],private=True)
         timings=jsonl(root/'phase_times.jsonl')
-        training={s:jsonl(root/s/'training/rft/train.jsonl') for s in ('stage1','stage2')}
+        training={s:jsonl(root/s/'training/rft/train.jsonl') for s in (('stage2',) if continuation else ('stage1','stage2'))}
         training_summary={s:dict(seconds=sum(x.get('seconds',0) for x in updates),
             peak_allocated_vram_bytes=max((x.get('max_vram',0) for x in updates),default=0),
             supervised_tokens=read(root/s/'schedule.json').get('actual_tokens'),
@@ -138,6 +170,11 @@ def run(a):
             submission_phase_seconds=sum(t['seconds'] for t in timings if t['phase']=='submission_generate'),
             submission_generation_seconds=sum(t['seconds'] for t in read(root/'submission/inference_times.json')),
             peak_device_vram_bytes=max(t['peak_device_vram_bytes'] for t in timings)))
+        if continuation:
+            from continuation import verify_source
+            verify_source(read(root/'continuation.json'))
+            from continuation import write_summary
+            write_summary(root)
         write(root/'status.json',dict(status='complete',submission=str(root/'submission/submission.json')))
         print('COMPLETE',root/'submission/submission.json',flush=True)
     except BaseException as exc:
@@ -148,6 +185,7 @@ def run(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--root',type=Path,required=True)
     p.add_argument('--eval-python',required=True);p.add_argument('--data-python',required=True)
+    p.add_argument('--continue-from',type=Path,help='Read-only completed 300k run; continue to cumulative 3000 questions')
     p.add_argument('--evaluate-checkpoints',dest='submission_first',action='store_false',
                    help='Optional original public-evaluation workflow; default skips it')
     run(p.parse_args())

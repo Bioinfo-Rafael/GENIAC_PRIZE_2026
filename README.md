@@ -1,5 +1,13 @@
 # GENIAC PRIZE 2026 Colab T4 実行記録と手順
 
+## 追加実験：数学Curriculum Stage 2を累計3,000問へ継続
+
+最高スコア0.19317の `math_curriculum_20261021_v1` を起点に、既存GSM Stage 1を固定し、300k checkpointのrank8 LoRAをLR5e-6で継続する実装を追加した。使用済み問題を元scheduleと完了記録から復元し、未使用PRM/LIMOだけで累計3,000問にする。固定PRM/LIMO評価で300kと継続後の2モデルを比較し、継続後モデルの未編集提出JSONを生成する。
+
+ローカル公開データ検証では既存1,040＋追加1,960問、追加123更新（最後のみ8問）、累計教師844,566トークン、PRM/LIMO教師比79.83:20.17。追加学習更新は旧ログから約6分の概算で、ロード・merge・評価・提出推論は別。これは計画の検証値であり、**GPU実行・評価結果・新提出スコアは未確認**。既存runの成果物は変更しない。
+
+[バックグラウンド起動・再開・保存先・レシピ](remote/math_curriculum/README.md#追加実験stage-2累計3000問へ継続2026-10-21)／[ローカル計画検証](remote/math_curriculum/continuation_validation.json)。新runは `math_curriculum_20261021_3000_v1`、提出先はそのrun内の `submission/submission.json`。実行完了時にrun内READMEへ学習実績・評価結果・時間を自動保存する。
+
 ## 最新結果：数学Curriculumで本番スコア0.19317（2026-10-21）
 
 **GSM8K Stage 1→PRM/LIMO Stage 2の0.19317（ユーザー報告）が、記録上の最高run03の0.18758を+0.00559更新。** 公開400問評価は省略し、30万予算側を直接提出した。提出232回答の公式形式チェックはerror/warning/violationすべて0。

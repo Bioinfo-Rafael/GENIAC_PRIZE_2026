@@ -3,7 +3,11 @@ set -euo pipefail
 umask 077
 MC_HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MC_WORKSPACE="${GENIAC_WORKSPACE:-$HOME/geniac_math}"
-MC_ID="${1:?Usage: launch.sh math_curriculum_RUN_ID}"
+MC_ID="${1:?Usage: launch.sh math_curriculum_RUN_ID [SOURCE_RUN_ID]}"
+MC_SOURCE_ID="${2:-}"
+if [[ -n "$MC_SOURCE_ID" ]]; then
+  [[ "$MC_SOURCE_ID" =~ ^math_curriculum_[a-zA-Z0-9_-]+$ && "$MC_SOURCE_ID" != "$MC_ID" ]] || { echo "Use distinct safe source and new run IDs"; exit 2; }
+fi
 [[ "$MC_ID" =~ ^math_curriculum_[a-zA-Z0-9_-]+$ ]] || { echo 'Expected math_curriculum_ prefix and safe run ID'; exit 2; }
 mkdir -p "$MC_WORKSPACE"
 exec 9>"$MC_WORKSPACE/.launch.lock"
@@ -31,6 +35,11 @@ for MC_PY in "$MC_TRAIN" "$MC_EVAL" "$MC_DATA"; do
 done
 export HF_HOME="${HF_HOME:-$MC_WORKSPACE/hf_cache}"
 export HF_HUB_DISABLE_TELEMETRY=1 TOKENIZERS_PARALLELISM=false
+if [[ -n "$MC_SOURCE_ID" ]]; then
+  exec "$MC_TRAIN" -u "$MC_ROOT/code/math_curriculum/run.py" --root "$MC_ROOT" \
+    --continue-from "$MC_WORKSPACE/math_curriculum/$MC_SOURCE_ID" \
+    --eval-python "$MC_EVAL" --data-python "$MC_DATA"
+fi
 # The small submission-first controller is separate from the frozen training
 # snapshot. Existing optimizer/checkpoint signatures therefore remain unchanged.
 mkdir -p "$MC_ROOT/control_submission_first"

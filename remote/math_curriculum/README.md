@@ -5,6 +5,90 @@
 ローカルの公開データ処理・CPUテストを実施済み。その後、GPU学習ログ・提出JSON・本番スコアを受領した。公開評価は省略した。以下は再現・再開用の起動手順。
 
 
+## 追加実験：Stage 2累計3,000問へ継続（2026-10-21）
+
+既存の `math_curriculum_20261021_v1` の300k adapterを引き継ぐ。**Stage 1の再学習・再mergeは行わない。** 既存runのモデル・checkpoint・提出JSONには書き込まず、新run `math_curriculum_20261021_3000_v1` に保存する。今回の経路は、下記の初回実験用「評価省略」経路と異なり、**既存300kと継続後の2モデルを固定PRM/LIMO評価セットで比較した後、継続後モデルの提出JSONを生成**する。評価結果にかかわらず継続後モデルを提出用に出力するという依頼に従い、別モデルは学習しない。
+
+### 起動・途中再開
+
+リモートで以下を実行する。最後のスクリプトが `nohup` でバックグラウンド起動し、PIDとログ先を表示する。既存venv・HFキャッシュを使用し、pip installは行わない。同じコマンド・同じrun IDで途中再開できる。実行中の重複起動は既存共有lockで拒否される。
+
+```bash
+(
+  set -e
+  cd "$HOME/geniac-remote"
+  git pull --ff-only origin main
+  if git sparse-checkout list >/dev/null 2>&1; then
+    { git sparse-checkout list; printf '%s\n' remote/math_curriculum remote/math_training remote/public_eval_diagnostics remote/rank64_12k; } |
+      sort -u | git sparse-checkout set --stdin
+  fi
+  bash remote/math_curriculum/start_continuation.sh \
+    math_curriculum_20261021_3000_v1 math_curriculum_20261021_v1
+)
+```
+
+```bash
+tail -f "$HOME/geniac_math/math_curriculum_20261021_3000_v1.console.log"
+```
+
+停止する場合は、この新runのPIDを確認して `kill -TERM PID` を使う。更新境界で保存する。再開では新runのoptimizer/scheduler/RNGを復元し、完了済みphaseをスキップする。既存300kのoptimizerやschedulerは引き継がない。
+
+### 引き継ぎ・学習レシピ
+
+- 元の `stage2/pairs.json` と `stage2/schedule.json`、`training/rft/complete.json` の署名・完了更新数から使用済み問題を復元する。候補poolの件数や65×16という推測だけで既存件数を決めない。
+- 300k milestoneとfinal adapterのhash一致、merge済みモデルのlineage、固定データ・tokenizer・モデルのSHA256を検証する。以後の再開でも出自の変更を検出する。必要な元ファイルがない場合は、再学習で代用せず停止する。
+- 元の未使用tokenize済みpoolを使うため、再取得・再tokenize・再splitは不要。元の派生問題グループ単位の分離を保持し、使用済みIDと追加IDを保存する。PRM/LIMO以外は追加しない。
+- 既存のGSM mergeモデルを親にして**学習済みrank8/alpha16のLoRA重みを読み込む**。新規重みからの学習は行わず、追加用AdamWとcosine scheduler（warmup5%）を新しく作る。LR上限5e-6、回答＋EOSのみNLL、context8192、seed42、microbatch1、実効batch16。Unsloth/NF4/FP16等は既存設定を継承する。
+- 累計3,000問を厳密に上限とし、最後の更新だけ16問未満を許す。既存1,040問なら追加1,960問＝122更新×16＋最後8問で123更新。重複によるpaddingや3,008問への超過は行わない。
+- 元の教師トークンも含めた累計80:20に近づくsourceを、seed42の固定順とトークン長だけで選ぶ。LIMO不足時は繰り返さずPRMで補い、全pool不足なら実際の件数・不足数・比率を報告する。完全な解説を保持する。
+
+### ローカル検証で得た計画値と時間の目安
+
+以下は保存済み公開データに対するCPU検証であり、**リモートの学習完了実績ではない**。起動時に実際の元runから再計算する。[検証JSON](continuation_validation.json)
+
+| 指標 | 既存300k | 追加分 | 累計 |
+| --- | ---: | ---: | ---: |
+| ユニーク問題数 | 1,040 | 1,960 | 3,000 |
+| PRM / LIMO問題数 | 1,025 / 15 | 1,935 / 25 | 2,960 / 40 |
+| 教師トークン | 298,233 | 546,333 | 844,566 |
+| PRM / LIMO教師トークン比 | 79.93 / 20.07% | 79.78 / 20.22% | 79.83 / 20.17% |
+
+旧Stage 2の成功更新198.80秒から教師トークン比例で見積もると、追加更新は約6分。ただし長さ構成・コンパイル等で変わり、ロード・保存・merge・評価・提出推論を含まない。全工程は暫定15〜45分程度を目安とし、実測の保証はしない。最初の数更新の速度・ETAを優先する。速度測定だけの別学習はしない。
+
+### 評価・保存先
+
+`data/eval.json` を元runからそのまま固定で再利用する。PRM200＋LIMO200（元splitで不足している場合は元の実件数）、greedy・1問1回答・最大2048 token、同じ `evaluate.py` / 最後のboxed / math-verifyを使用する。旧GSM/PRM dev400や本番回答は読まない。既存300k評価が完了し、評価セット・モデルhash・設定・grader・ライブラリ版が一致する場合は新runへコピーして再利用し、推論し直さない。一致しなければ同じ新環境で評価する。
+
+```bash
+MC_OUT="$HOME/geniac_math/math_curriculum/math_curriculum_20261021_3000_v1"
+cat "$MC_OUT/status.json"
+cat "$MC_OUT/data/report.json"
+cat "$MC_OUT/report.json"
+cat "$MC_OUT/runtime_summary.json"
+cat "$MC_OUT/submission/format_check.json"
+```
+
+| 新run以下 | 内容 |
+| --- | --- |
+| `continuation.json` | 元run・300k adapter・モデル/データ/設定のhashと継続方針 |
+| `data/used_stage2_ids.json`, `data/additional_stage2_ids.json` | 既存使用済みID・追加ID（重複なし） |
+| `data/report.json` | 既存・追加・累計の予定問題数、source別教師トークン、比率、不足理由 |
+| `stage2/training/rft/complete.json` | 追加学習の完了更新数・実教師トークン。候補pool数と区別 |
+| `stage2/training/rft/` | 新run専用のoptimizer付きcheckpoint・最終adapter・更新ログ |
+| `models/cumulative3000/` | GSM merge親＋継続更新済みStage 2をmergeした単一モデル |
+| `evaluations/{300000,cumulative3000}/` | 同一条件の回答・PRM/LIMO/全体正答率・分母・生成長・反復・上限到達等 |
+| `report.json`, `question_changes.json` | 実現した累計件数・2モデルの比較・問題別正誤変化・paired bootstrap 95%区間 |
+| `runtime_summary.json`, `phase_times.jsonl` | 追加学習・評価・提出の時間、ピークVRAM。Stage 1時間は加算しない |
+| `README.md` | 完了後に自動生成する学習実績・評価結果・時間のまとめ |
+| `submission/submission.json` | 継続後モデルの未編集提出JSON |
+| `submission/{format_check,hashes,manifest}.json` | 公式形式検査・SHA256・モデル/tokenizer/設定・出自 |
+
+元runの `models/stage1` と `models/300000` は読み取り参照し、新runではStage 2最終mergeだけを行う。新run名・`cumulative3000` は目標名で、不足時は `report.json` の実件数を正とする。公式提出処理は `math_training/submission.py` と既存wrapperを使用し、単一モデル・greedy・1問1回答、出力無編集、Omnicampus送信なし。公開評価比較の完了前には本番入力を取得しない。
+
+ローカルでは継続専用・既存Curriculum・共通loss/提出/scheduleの計51テストを通過。使用済みID除外、端数batch、教材不足、初期LoRA/再開LoRAの読み分け、評価cache一致条件、失敗後のphase再開、元run不変、継続モデルからの無編集JSON生成を検証した。シェル構文・Python構文・差分形式も検査済み。
+
+実装は既存runnerへの継続分岐、既存GPU loaderへの初期adapter指定、件数ベースの追加schedule作成が中心。共通学習・checkpoint・grader・公式提出エンジンは変更していない。GPU実行・新しい正答率・提出スコアはリモート実行後に記録する。
+
 ## 実行結果：本番スコア0.19317（2026-10-21）
 
 **ユーザー報告の0.19317で、記録上の最高run03（0.18758）を+0.00559更新。** 受領した提出JSON232回答の公式形式チェックはerrors/violations/warningsすべて0。公開400問評価はユーザー指示で省略し、30万予算側を直接提出した。

@@ -199,7 +199,8 @@ def test_grading_timeout_is_recorded_not_dropped(monkeypatch):
     assert result['grader_error'] and not result['correct']
 
 
-def test_curriculum_submission_uses_selected_model_and_raw_outputs(tmp_path,monkeypatch):
+@pytest.mark.parametrize('selected',['100000','cumulative3000'])
+def test_curriculum_submission_uses_selected_model_and_raw_outputs(tmp_path,monkeypatch,selected):
     """Full shared generator + curriculum wrapper, with synthetic questions/engine."""
     import torch
     from types import SimpleNamespace
@@ -209,9 +210,12 @@ def test_curriculum_submission_uses_selected_model_and_raw_outputs(tmp_path,monk
     from common import CONFIG
     root=tmp_path/'run';dest=root/'submission'
     with pytest.raises(FileNotFoundError):submit.run(root,'fetch')
-    write(root/'selection.json',{'candidate':'100000'})
-    for name in ['models/100000/artifacts.json','models/100000/lineage.json','identity.json','data/complete.json','stage1/training_contract.json','stage2/training_contract.json']:
+    write(root/'selection.json',{'candidate':selected})
+    for name in [f'models/{selected}/artifacts.json',f'models/{selected}/lineage.json','identity.json','data/complete.json','stage1/training_contract.json','stage2/training_contract.json']:
         write(root/name,{})
+    if selected=='cumulative3000':
+        write(root/'continuation.json',{'source':'read-only source'})
+        write(root/'data/report.json',{'cumulative':{'questions':3000}})
     questions=[dict(question_id='0',task='math_comp',subtask='synthetic',turns=['synthetic question'])]
     write(dest/'questions.json',questions);write(dest/'question_identity.json',{'sha256':sha(dest/'questions.json')})
     monkeypatch.setattr(submission.checker,'QUESTION_IDS',frozenset(['0']))
@@ -224,7 +228,7 @@ def test_curriculum_submission_uses_selected_model_and_raw_outputs(tmp_path,monk
             assert messages==[{'role':'user','content':'synthetic question'}]
             return [1,2] if tokenize else '<|im_start|>user\nsynthetic question<|im_end|>\n<|im_start|>assistant\n'
     class LLM:
-        def __init__(self,**kw): assert kw['model']==str(root/'models/100000')
+        def __init__(self,**kw): assert kw['model']==str(root/'models'/selected)
         def get_tokenizer(self): return Tok()
         def chat(self,conversations,params,**kw):
             assert params[0]['n']==1 and params[0]['temperature']==0
