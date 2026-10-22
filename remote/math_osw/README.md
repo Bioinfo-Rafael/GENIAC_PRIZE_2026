@@ -46,6 +46,12 @@ math_osw/<run ID>/
 
 ## 検証
 
+### 実行中のジョブを20分に短縮
+
+Linux上の`cap_running.py --root <既存runディレクトリ>`を別プロセスで実行すると、既存の起動時刻から20分を上限にする。時計や学習コードのsnapshotは書き換えない。最初の非ゼロLR更新がcheckpointへ保存された時点、または起動7分で学習へSIGTERMを送り、完了済みbatchからmerge・提出推論へ進める。提出ZIPが用意できたらcoordinatorへ終了要求を送り、任意の公開評価を省略・中断する。20分の10秒前に対象runだけへ終了要求を送り、5秒後も残る対象phaseのprocess groupを終了させる。既に20分経過した場合は直ちに停止処理する。
+
+`cap20_request.json`に短縮要求を記録する。従来の`budget.json`は60分のままなので、この追加制約も併読すること。CPU制御テスト済み、Linux/GPU実機は未検証。OSの停止不能なI/O待ちなどを除く停止上限であり、20分以内の提出JSON完成や精度改善は保証しない。有効な更新が保存されなければ、新モデルの出力を拒否する既存動作を維持する。
+
 ```bash
 .venv-local/bin/python -m unittest discover -s remote/math_osw/tests -v
 bash -n remote/math_osw/launch.sh
