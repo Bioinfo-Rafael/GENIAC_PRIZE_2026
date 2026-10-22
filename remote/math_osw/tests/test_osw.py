@@ -47,14 +47,14 @@ class CPUTrainingTests(unittest.TestCase):
     Only GPU transport, policy generation and pretrained weights are substituted.
     This is not a CUDA/Unsloth/vLLM compatibility test.
     """
-    def exercise(self,mode='mixed',interrupt_after=None):
+    def exercise(self,mode='mixed',interrupt_after=None,constant=False,questions=48):
         import torch
         import worker
         from osw_train import train_context
         directory=tempfile.TemporaryDirectory(); self.addCleanup(directory.cleanup)
         root=Path(directory.name)
-        rows=[row(i) for i in range(48)]
-        plan=count_plan(rows,[(candidate_name(n),n) for n in (16,32,48)])
+        rows=[row(i) for i in range(questions)]
+        plan=count_plan(rows,[(candidate_name(n),n) for n in range(16,questions+1,16)])
         write(root/'chain/stage2/pairs.json',rows)
         write(root/'chain/stage2/schedule.json',plan)
         write(root/'budget.json',dict(train_deadline_epoch=time.time()+3600))
@@ -95,6 +95,7 @@ class CPUTrainingTests(unittest.TestCase):
             if kwargs.get('device')=='cuda': kwargs['device']='cpu'
             return real_tensor(*args,**kwargs)
         ctx=dict(config=dict(learning_rate=1e-6),inputs=str(root/'tokenizer'),signature='test')
+        if constant: ctx['config']['lr_policy']=dict(kind='constant',total_steps=1)
         worker.STOP=False; self.addCleanup(setattr,worker,'STOP',False)
         with patch.object(worker,'load_train_model',return_value=model), \
              patch.object(worker,'tokenizer_for',return_value=Tokenizer()), \
@@ -107,6 +108,22 @@ class CPUTrainingTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError,'No nonzero-LR update'): train_context(root,ctx)
             else: train_context(root,ctx)
         return root,model,initial,seen
+
+    def test_single_batch_constant_lr_really_changes_weights(self):
+        import torch
+        root,model,initial,seen=self.exercise(constant=True,questions=16)
+        self.assertGreater(model.value.item(),initial.item())
+        self.assertEqual(len(seen),16)
+        self.assertEqual(read(root/'selected.json')['consumed_questions'],16)
+        state=torch.load(root/'chain/stage2/training/rft/checkpoint-00001/state.pt',weights_only=False)
+        self.assertEqual(state['nonzero_lr_updates'],1)
+        record=json.loads((root/'chain/stage2/training/rft/train.jsonl').read_text())
+        self.assertEqual(record['learning_rate'],1e-6)
+
+    def test_constant_lr_zero_reward_weight_does_not_emit_parent(self):
+        root,model,initial,seen=self.exercise(mode='all_correct',constant=True,questions=16)
+        self.assertEqual(model.value.item(),initial.item())
+        self.assertFalse((root/'selected.json').exists())
 
     def test_weighted_teacher_update_and_checkpoint(self):
         import torch
@@ -178,6 +195,27 @@ class CoordinatorTests(unittest.TestCase):
         write(root/'data/complete.json',dict(valid=False))
         with self.assertRaisesRegex(ValueError,'Artifact changed'):
             runner.phase('prepare',sys.executable,time.time()+20)
+
+    def test_submission_can_finish_after_deadline(self):
+        module,root,runner=self.runner()
+        runner.budget['finish_submission']=True
+        name=candidate_name(16)
+        write(root/'selected.json',dict(name=name))
+        for f in ('submission.json','format_check.json','hashes.json'):
+            write(root/name/'submission'/f,dict(test=True))
+        (root/'phases.py').write_text('import time\ntime.sleep(.3)\n')
+        with patch.object(module,'HERE',root):
+            runner.phase('submit',sys.executable,time.time()+.1)
+        self.assertTrue((root/'receipts/submit.json').exists())
+
+    def test_submission_extension_does_not_extend_training(self):
+        module,root,runner=self.runner()
+        runner.budget['finish_submission']=True
+        (root/'phases.py').write_text('import time\ntime.sleep(30)\n')
+        with patch.object(module,'HERE',root):
+            with self.assertRaisesRegex(RuntimeError,'deadline'):
+                runner.phase('train',sys.executable,time.time()+.1)
+        self.assertFalse((root/'receipts/train.json').exists())
 
     def test_zip_exists_before_optional_evaluation(self):
         import zipfile

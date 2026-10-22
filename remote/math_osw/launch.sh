@@ -19,15 +19,7 @@ OSW_DATA="${GENIAC_DATA_PYTHON:-$OSW_WORKSPACE/.venv-submission-data/bin/python}
 for OSW_PY in "$OSW_TRAIN" "$OSW_EVAL" "$OSW_DATA"; do test -x "$OSW_PY"; done
 export HF_HOME="${HF_HOME:-$OSW_WORKSPACE/hf_cache}"
 export HF_HUB_OFFLINE=1 HF_HUB_DISABLE_TELEMETRY=1 TOKENIZERS_PARALLELISM=false
-"$OSW_TRAIN" - "$OSW_ROOT" "$OSW_STARTED" <<'PY'
-import json, pathlib, sys
-root=pathlib.Path(sys.argv[1]); start=int(sys.argv[2])
-p=root/'budget.json'
-if not p.exists():
-    p.write_text(json.dumps(dict(started_epoch=start,deadline_epoch=start+3600,
-        train_deadline_epoch=start+2040,max_seconds=3600,
-        policy='Absolute wall clock, never reset on resume; preserve submission time')))
-PY
+"$OSW_TRAIN" "$OSW_HERE/budget_plan.py" "$OSW_ROOT" "$OSW_STARTED" "${OSW_PROFILE:-60m}"
 # Snapshot the established helpers, plus this new isolated runner. No pip installs.
 if [[ ! -d "$OSW_ROOT/code" ]]; then
   mkdir -p "$OSW_ROOT/code.partial"
@@ -39,7 +31,13 @@ if [[ ! -d "$OSW_ROOT/code" ]]; then
   mv "$OSW_ROOT/code.partial" "$OSW_ROOT/code"
 fi
 OSW_REMAINING="$("$OSW_TRAIN" -c 'import json,sys,time; print(max(0,int(json.load(open(sys.argv[1]))["deadline_epoch"]-time.time())-5))' "$OSW_ROOT/budget.json")"
-if (( OSW_REMAINING <= 0 )); then echo 'Original 60-minute deadline exhausted'; exit 75; fi
-exec timeout --signal=TERM --kill-after=5s "${OSW_REMAINING}s" "$OSW_TRAIN" -u "$OSW_ROOT/code/math_osw/run.py" \
+if (( OSW_REMAINING <= 0 )); then echo 'Original deadline exhausted'; exit 75; fi
+OSW_COMMAND=("$OSW_TRAIN" -u "$OSW_ROOT/code/math_osw/run.py" \
   --root "$OSW_ROOT" --predecessor "$OSW_PREVIOUS" \
-  --train-python "$OSW_TRAIN" --eval-python "$OSW_EVAL" --data-python "$OSW_DATA"
+  --train-python "$OSW_TRAIN" --eval-python "$OSW_EVAL" --data-python "$OSW_DATA")
+if [[ "${OSW_PROFILE:-60m}" == 15m ]]; then
+  # Runner bounds prepare/train/merge; submission is allowed to finish.
+  exec "${OSW_COMMAND[@]}"
+else
+  exec timeout --signal=TERM --kill-after=5s "${OSW_REMAINING}s" "${OSW_COMMAND[@]}"
+fi

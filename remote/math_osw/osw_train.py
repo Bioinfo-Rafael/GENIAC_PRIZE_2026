@@ -47,8 +47,10 @@ def train_context(root, ctx):
             raise ValueError('Missing actual supervised EOS')
     params = [p for p in model.parameters() if p.requires_grad]
     optimizer = torch.optim.AdamW(params,lr=cfg['learning_rate'],weight_decay=.01)
-    # Preserve the successful 3k->10k schedule, even for a short pilot prefix.
-    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer,lambda step:lr_factor(step,438))
+    # The 15-minute one-batch pilot must actually update at its first step.
+    constant = cfg.get('lr_policy',{}).get('kind') == 'constant'
+    factor = (lambda step: 1.) if constant else (lambda step: lr_factor(step,438))
+    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer,factor)
     scaler = torch.amp.GradScaler('cuda',enabled=True)
     step = updates = nonzero_lr_updates = 0
     seconds = []
@@ -150,7 +152,7 @@ def train_context(root, ctx):
         else:
             # Match the predeclared batch-position LR without optimizer.step().
             scheduler.last_epoch += 1
-            scheduler._last_lr = [base*lr_factor(step+1,438) for base in scheduler.base_lrs]
+            scheduler._last_lr = [base*factor(step+1) for base in scheduler.base_lrs]
             for pg,lr in zip(optimizer.param_groups,scheduler._last_lr): pg['lr'] = lr
         step += 1
         torch.cuda.synchronize(); seconds.append(time.time()-started)

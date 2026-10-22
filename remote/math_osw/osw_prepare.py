@@ -57,8 +57,9 @@ def prepare(root, predecessor, maximum):
     chain = root/'chain'
     names = [(candidate_name(n),n) for n in range(16,maximum+1,16)]
     plan = count_plan(rows,names)
+    short = read(root/'budget.json').get('profile') == '15m'
     recipe = dict(learning_rate=1e-6,lora_rank=8,lora_alpha=16,
-        lr_policy=dict(kind='cosine_5pct',switch_step=None,total_steps=438))
+        lr_policy=dict(kind='constant' if short else 'cosine_5pct',switch_step=None,total_steps=1 if short else 438))
     for name in ('models/stage1','stage1','tokenizer'):
         link_readonly(parent/name,chain/name)
     payloads = {
@@ -84,7 +85,7 @@ def prepare(root, predecessor, maximum):
                 step=n//16,realized=counts(full[:3000+n]),trained_this_chain=counts(rows[:n]),
                 requested_questions=3000+maximum,source=source.name,recipe=recipe,
                 objective='OSW-weighted response+EOS token-mean NLL; two current-policy rollouts',
-                history_difference='Small pilot prefix, original 438-batch cosine horizon; not a completed 10k run')})
+                history_difference=('16-question pilot, constant LR 1e-6 without warmup; not a completed 10k run' if short else 'Small pilot prefix, original 438-batch cosine horizon; not a completed 10k run'))})
     for path,value in payloads.items(): immutable_json(root/path,value)
     immutable_json(root/'data/complete.json',file_receipt(root,[root/p for p in payloads]))
     print('PREPARED',counts(rows),flush=True)

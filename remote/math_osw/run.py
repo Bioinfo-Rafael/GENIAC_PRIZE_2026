@@ -34,6 +34,9 @@ class Runner:
             verify_files(self.root,read(receipt)['files']); return
         end=min(end,self.deadline-15)
         if self.stopped or time.time() >= end: raise TimeoutError('No time for '+phase)
+        # User explicitly permits inference/validation to finish beyond 15 min.
+        if phase=='submit' and self.budget.get('finish_submission',False):
+            end=float('inf')
         log=self.root/('private_logs' if phase in ('fetch','submit') else 'logs')/(phase+'.log')
         log.parent.mkdir(parents=True,exist_ok=True)
         self.report['phase']=phase; self.save()
@@ -92,8 +95,9 @@ class Runner:
 
     def run(self):
         try:
-            request=dict(predecessor=str(self.a.predecessor.resolve()),maximum_questions=128,
-                algorithm='OSW pilot v1',horizon=438,learning_rate=1e-6,seed=42,
+            short=self.budget.get('profile')=='15m'
+            request=dict(predecessor=str(self.a.predecessor.resolve()),maximum_questions=16 if short else 128,
+                algorithm='OSW pilot 15m constant-LR v2' if short else 'OSW pilot v1',horizon=1 if short else 438,learning_rate=1e-6,seed=42,
                 rollout=dict(count=2,temperature=1.,top_p=1.,top_k=0,max_tokens=2048),
                 policy='fixed unique prefix; last finished batch; immutable absolute deadline')
             immutable_json(self.root/'request.json',request)
@@ -107,19 +111,20 @@ class Runner:
             if active: raise RuntimeError('GPU busy; no jobs will be terminated')
             code={str(p.relative_to(HERE.parent)):sha(p) for p in HERE.parent.rglob('*')
                 if p.is_file() and p.suffix in ('.py','.json','.jinja','.sh') and '__pycache__' not in p.parts}
-            immutable_json(self.root/'identity.json',dict(recipe='osw_pilot_v1',code=code,config=CONFIG,request=request))
+            immutable_json(self.root/'identity.json',dict(recipe='osw_pilot_15m_v2' if short else 'osw_pilot_v1',code=code,config=CONFIG,request=request))
             for role,python in [('train',self.a.train_python),('eval',self.a.eval_python),('data',self.a.data_python)]:
                 packages=subprocess.check_output([python,'-m','pip','freeze'],text=True,timeout=30).splitlines()
                 immutable_json(self.root/f'packages_{role}.json',sorted(packages))
-            self.phase('prepare',self.a.train_python,self.budget['started_epoch']+240)
+            start=self.budget['started_epoch']
+            self.phase('prepare',self.a.train_python,start+self.budget.get('prepare_seconds',240))
             verify_files(self.root,read(self.root/'data/complete.json'))
             verify_files(Path('/'),read(self.root/'source.json')['absolute_files'])
-            self.phase('fetch',self.a.data_python,self.budget['started_epoch']+300)
-            self.phase('train',self.a.train_python,self.budget['train_deadline_epoch']+60)
-            self.phase('merge',self.a.train_python,self.deadline-1050)
-            self.phase('submit',self.a.eval_python,self.deadline-180)
+            self.phase('fetch',self.a.data_python,start+self.budget.get('fetch_seconds',300))
+            self.phase('train',self.a.train_python,start+self.budget.get('train_finish_seconds',2100))
+            self.phase('merge',self.a.train_python,start+self.budget.get('merge_finish_seconds',2550))
+            self.phase('submit',self.a.eval_python,start+self.budget.get('submit_finish_seconds',3420))
             self.package()  # Deliverable exists before optional evaluation begins.
-            if not self.stopped and self.deadline-time.time() > 660:
+            if not self.budget.get('skip_evaluation',False) and not self.stopped and self.deadline-time.time() > 660:
                 try:
                     self.phase('evaluate',self.a.eval_python,self.deadline-90)
                     self.report['evaluation']='complete'
