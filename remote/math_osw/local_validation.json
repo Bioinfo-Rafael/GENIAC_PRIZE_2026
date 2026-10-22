@@ -1,0 +1,17 @@
+{
+  "date_jst": "2026-10-22",
+  "cpu_tests": 9,
+  "cpu_tests_status": "passed",
+  "cuda_end_to_end": "not_run",
+  "remote_execution": "user_requested_to_run_themselves",
+  "code_sha256": {
+    "remote/math_osw/README.md": "3c82aa6d6eacc8e0fd1969b9cf4c6705e5d9befb35d7654aa4b566c84638184f",
+    "remote/math_osw/helpers.py": "7352b6fb87d664b65af1cd4ada86fdd9168eee86acdf20c680f2a3600516f374",
+    "remote/math_osw/launch.sh": "960c8bead8a14bddbd4b220ff65ca810eabaecbf18602ab1ae0cf06597e4e295",
+    "remote/math_osw/osw_prepare.py": "5ada10b6b2994cab0b5f30088ec2faeea8aae1595f26317a69c0ffc125787ae8",
+    "remote/math_osw/osw_train.py": "ef73f6a0c6fcfb20e4456faab7374ddfcd3dbc66dea8ae1226c7790a26d7714e",
+    "remote/math_osw/phases.py": "2428b804dc5f532a604d20a380c20ce070bf836d55634f963c7dd4aec5bdd016",
+    "remote/math_osw/run.py": "2c5c8adc33350313a49753a643980d69d24b78d60070f3a7cc164479c6c2da70",
+    "remote/math_osw/tests/test_osw.py": "ce13c91c36fa34aa5a0b37e1682309b11559a503a76cddf6ce7d4ceffdbc56a8"
+  }
+}
